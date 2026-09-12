@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --page: 246 248 252;
+  --surface: 255 255 255;
+  --surface-2: 237 242 250;
+  --line: 213 221 235;
+
+  --ink: 15 23 42;
+  --ink-soft: 61 72 92;
+  --ink-mute: 105 117 138;
+
+  --brand: 29 78 216;
+  --on-brand: 255 255 255;
+  /* Само за декорација (градиенти, дамки) — не носи значење како другите */
+  --accent: 124 58 237;
+
+  --warm: 180 83 9;
+  --good: 4 120 87;
+  --bad: 190 18 60;
+
+  --shadow: 15 23 42;
+
+  color-scheme: light;
+}
+
+.dark {
+  --page: 13 20 35;
+  --surface: 22 31 51;
+  --surface-2: 31 43 70;
+  --line: 45 60 92;
+
+  --ink: 241 245 251;
+  --ink-soft: 194 204 222;
+  --ink-mute: 138 152 176;
+
+  --brand: 96 165 250;
+  --on-brand: 8 15 28;
+  --accent: 167 139 250;
+
+  --warm: 251 191 36;
+  --good: 52 211 153;
+  --bad: 251 113 133;
+
+  --shadow: 0 0 0;
+
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: rgb(var(--page));
+  color: rgb(var(--ink-soft));
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: rgb(var(--brand) / 0.22);
+}
+
+/* Фокус прстен само за тастатура — мишот не го добива */
+:focus-visible {
+  outline: 2px solid rgb(var(--brand));
+  outline-offset: 2px;
+}
+
+/* Скролбар во тон со темата */
+* {
+  scrollbar-color: rgb(var(--line)) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: rgb(var(--line));
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(var(--ink-mute));
+}
+
+/* Иконата на датумските полиња во темна тема е црна на црно */
+input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+}
+
+.dark input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+}

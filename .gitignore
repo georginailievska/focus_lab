@@ -1,0 +1,30 @@
+# Backend
+backend/target/
+backend/.mvn/
+*.class
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/tsconfig.tsbuildinfo
+
+# Env
+.env
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+
+# Логови од локални стартувања
+*.log
+
+# Работни фајлови што не му требаат на репото
+*.zip
+*.tar.gz
+
+# Локални .env варијанти
+.env.local
+.env.*.local

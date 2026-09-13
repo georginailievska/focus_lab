@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-focuslab}
+      POSTGRES_USER: ${DB_USER:-focuslab}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-focuslab}
+    volumes:
+      - focuslab_db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-focuslab}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-focuslab}
+      DB_USER: ${DB_USER:-focuslab}
+      DB_PASSWORD: ${DB_PASSWORD:-focuslab}
+      JWT_SECRET: ${JWT_SECRET:?ве молиме постави JWT_SECRET во .env}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+      MAIL_USERNAME: ${MAIL_USERNAME:-your-account@yourdomain.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-your-app-password}
+      MAIL_FROM: ${MAIL_FROM:-focuslab@yourdomain.com}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@focuslab.mk}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ве молиме постави ADMIN_PASSWORD во .env}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "5173:80"
+
+volumes:
+  focuslab_db_data:

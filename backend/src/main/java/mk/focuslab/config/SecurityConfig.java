@@ -1,5 +1,6 @@
 package mk.focuslab.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import mk.focuslab.security.JwtAuthFilter;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,6 +51,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Без токен или со истечен токен: 401, не 403. Frontend-от на 401
+                // го брише токенот и води на најава; 403 остава корисникот заглавен.
+                .exceptionHandling(handling -> handling.authenticationEntryPoint(
+                        (request, response, exception) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
                         // Docker HEALTHCHECK-от мора да поминува без токен
                         .requestMatchers("/api/health").permitAll()

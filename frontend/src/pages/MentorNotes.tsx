@@ -48,7 +48,7 @@ export default function MentorNotes() {
     <Layout>
       <PageHeader
         title="Забелешки"
-        subtitle="Сите забелешки од сесиите, на едно место. Ги гледаат само менторите."
+        subtitle="Сите забелешки од сесии, на едно место."
         actions={
           <span className="block w-40 sm:w-52">
             <Select

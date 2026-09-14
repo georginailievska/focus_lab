@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { Avatar } from '../components/Avatar'
+import { SessionNotes } from '../components/SessionNotes'
 import { ApplicationStatusBadge } from '../components/StatusBadge'
 import { SubjectBadge } from '../components/SubjectBadge'
 import { Alert, Badge, Button, Card, Skeleton } from '../components/ui'
@@ -189,6 +190,12 @@ export default function SessionDetails() {
           </p>
         )}
       </Card>
+
+      {user?.role === 'MENTOR' && (
+        <div className="mt-9">
+          <SessionNotes sessionId={sessionId} />
+        </div>
+      )}
     </Layout>
   )
 }

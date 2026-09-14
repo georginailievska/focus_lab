@@ -18,6 +18,7 @@ import mk.focuslab.model.SessionMode;
 import mk.focuslab.model.Subject;
 import mk.focuslab.model.User;
 import mk.focuslab.repository.SessionApplicationRepository;
+import mk.focuslab.repository.SessionNoteRepository;
 import mk.focuslab.repository.SessionRepository;
 import mk.focuslab.repository.SubjectRepository;
 import mk.focuslab.repository.UserRepository;
@@ -55,6 +56,8 @@ class SessionServiceTest {
     private UserRepository userRepository;
     @Mock
     private SessionApplicationRepository applicationRepository;
+    @Mock
+    private SessionNoteRepository noteRepository;
     @Mock
     private ApplicationEventPublisher events;
     @Mock
@@ -446,7 +449,7 @@ class SessionServiceTest {
     }
 
     @Test
-    @DisplayName("Откажување ги брише пријавите и известува пред бришењето")
+    @DisplayName("Откажување ги брише пријавите и забелешките, и известува пред бришењето")
     void cancelDeletesApplicationsAndNotifies() {
         User owner = mentor(1L, MentorStatus.APPROVED);
         Session existing = session(TOMORROW_10, TOMORROW_10.plusHours(2));
@@ -459,6 +462,7 @@ class SessionServiceTest {
         sessionService.cancelSession(7L, owner);
 
         verify(applicationRepository).deleteBySessionId(7L);
+        verify(noteRepository).deleteBySessionId(7L);
         verify(sessionRepository).delete(existing);
 
         ArgumentCaptor<Object> published = ArgumentCaptor.forClass(Object.class);

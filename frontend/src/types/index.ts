@@ -186,6 +186,13 @@ export interface PostComment {
   createdAt: string
 }
 
+export interface SessionNote {
+  id: number
+  author: Author
+  text: string
+  createdAt: string
+}
+
 export interface Post {
   id: number
   author: Author

@@ -25,6 +25,7 @@ import mk.focuslab.model.SessionMode;
 import mk.focuslab.model.Subject;
 import mk.focuslab.model.User;
 import mk.focuslab.repository.SessionApplicationRepository;
+import mk.focuslab.repository.SessionNoteRepository;
 import mk.focuslab.repository.SessionRepository;
 import mk.focuslab.repository.SubjectRepository;
 import mk.focuslab.repository.UserRepository;
@@ -54,6 +55,7 @@ public class SessionService {
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
     private final SessionApplicationRepository applicationRepository;
+    private final SessionNoteRepository noteRepository;
     private final ApplicationEventPublisher events;
     private final DtoMapper mapper;
 
@@ -142,6 +144,7 @@ public class SessionService {
         LocalDateTime startTime = session.getStartTime();
 
         applicationRepository.deleteBySessionId(sessionId);
+        noteRepository.deleteBySessionId(sessionId);
         sessionRepository.delete(session);
 
         if (!recipients.isEmpty()) {

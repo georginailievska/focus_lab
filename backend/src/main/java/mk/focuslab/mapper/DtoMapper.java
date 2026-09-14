@@ -9,6 +9,7 @@ import mk.focuslab.dto.MentorResponse;
 import mk.focuslab.dto.PostResponse;
 import mk.focuslab.dto.ProfileResponse;
 import mk.focuslab.dto.ProfileStats;
+import mk.focuslab.dto.SessionNoteResponse;
 import mk.focuslab.dto.SessionResponse;
 import mk.focuslab.dto.SubjectResponse;
 import mk.focuslab.dto.UserResponse;
@@ -17,6 +18,7 @@ import mk.focuslab.model.PostAttachment;
 import mk.focuslab.model.PostComment;
 import mk.focuslab.model.Session;
 import mk.focuslab.model.SessionApplication;
+import mk.focuslab.model.SessionNote;
 import mk.focuslab.model.Subject;
 import mk.focuslab.model.User;
 import org.springframework.stereotype.Component;
@@ -136,6 +138,15 @@ public class DtoMapper {
                 toAuthorResponse(comment.getAuthor()),
                 comment.getText(),
                 comment.getCreatedAt()
+        );
+    }
+
+    public SessionNoteResponse toSessionNoteResponse(SessionNote note) {
+        return new SessionNoteResponse(
+                note.getId(),
+                toAuthorResponse(note.getAuthor()),
+                note.getText(),
+                note.getCreatedAt()
         );
     }
 

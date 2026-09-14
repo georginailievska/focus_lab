@@ -1,5 +1,5 @@
 import { api } from './client'
-import type { Mentor, Session, SessionApplication, SessionNote } from '../types'
+import type { Mentor, MentorNote, Session, SessionApplication, SessionNote } from '../types'
 
 export function getMySessions() {
   return api.get<Session[]>('/mentor/sessions').then((res) => res.data)
@@ -12,6 +12,13 @@ export function getPendingRequests() {
 /** Другите одобрени ментори — за избор на ко-ментор. */
 export function getColleagues() {
   return api.get<Mentor[]>('/mentor/colleagues').then((res) => res.data)
+}
+
+// Сите забелешки од сите сесии — за табот „Забелешки"
+export function getAllNotes(subjectId?: number) {
+  return api
+    .get<MentorNote[]>('/mentor/notes', { params: subjectId ? { subjectId } : undefined })
+    .then((res) => res.data)
 }
 
 // Забелешките се под /api/mentor, каде SecurityConfig не пушта друга улога

@@ -186,6 +186,13 @@ export interface PostComment {
   createdAt: string
 }
 
+export interface MentorNote extends SessionNote {
+  sessionId: number
+  sessionTitle: string
+  sessionStartTime: string
+  subject: Subject
+}
+
 export interface SessionNote {
   id: number
   author: Author

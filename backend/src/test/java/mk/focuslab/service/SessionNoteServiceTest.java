@@ -8,9 +8,11 @@ import mk.focuslab.model.MentorStatus;
 import mk.focuslab.model.Role;
 import mk.focuslab.model.Session;
 import mk.focuslab.model.SessionNote;
+import mk.focuslab.model.Subject;
 import mk.focuslab.model.User;
 import mk.focuslab.repository.SessionNoteRepository;
 import mk.focuslab.repository.SessionRepository;
+import org.springframework.data.domain.Limit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,12 +21,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -109,6 +114,30 @@ class SessionNoteServiceTest {
         assertThatThrownBy(() -> noteService.addNote(
                 7L, new SessionNoteRequest("текст"), mentor(2L, MentorStatus.APPROVED)))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Прегледот без предмет бара сè, со предмет само тој предмет")
+    void overviewPassesSubjectFilter() {
+        User viewer = mentor(2L, MentorStatus.APPROVED);
+        Session session = Session.builder()
+                .id(7L)
+                .title("Подготовка за колоквиум")
+                .subject(Subject.builder().id(2L).name("Бази на податоци").build())
+                .build();
+        SessionNote existing = note(1L, viewer);
+        existing.setSession(session);
+
+        when(noteRepository.findForOverview(anyLong(), any(Limit.class))).thenReturn(List.of(existing));
+
+        noteService.listAllNotes(null, viewer);
+        noteService.listAllNotes(2L, viewer);
+
+        ArgumentCaptor<Long> subjectIds = ArgumentCaptor.forClass(Long.class);
+        verify(noteRepository, times(2)).findForOverview(subjectIds.capture(), any(Limit.class));
+
+        assertThat(subjectIds.getAllValues())
+                .containsExactly(SessionNoteRepository.ANY_SUBJECT, 2L);
     }
 
     @Test

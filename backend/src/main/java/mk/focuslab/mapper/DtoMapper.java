@@ -5,6 +5,7 @@ import mk.focuslab.dto.AttachmentResponse;
 import mk.focuslab.dto.AuthorResponse;
 import mk.focuslab.dto.CommentResponse;
 import mk.focuslab.dto.AuthResponse;
+import mk.focuslab.dto.MentorNoteResponse;
 import mk.focuslab.dto.MentorResponse;
 import mk.focuslab.dto.PostResponse;
 import mk.focuslab.dto.ProfileResponse;
@@ -138,6 +139,21 @@ public class DtoMapper {
                 toAuthorResponse(comment.getAuthor()),
                 comment.getText(),
                 comment.getCreatedAt()
+        );
+    }
+
+    public MentorNoteResponse toMentorNoteResponse(SessionNote note) {
+        Session session = note.getSession();
+
+        return new MentorNoteResponse(
+                note.getId(),
+                toAuthorResponse(note.getAuthor()),
+                note.getText(),
+                note.getCreatedAt(),
+                session.getId(),
+                session.getTitle(),
+                session.getStartTime(),
+                toSubjectResponse(session.getSubject())
         );
     }
 

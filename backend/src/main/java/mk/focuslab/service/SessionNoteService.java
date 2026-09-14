@@ -1,6 +1,7 @@
 package mk.focuslab.service;
 
 import lombok.RequiredArgsConstructor;
+import mk.focuslab.dto.MentorNoteResponse;
 import mk.focuslab.dto.SessionNoteRequest;
 import mk.focuslab.dto.SessionNoteResponse;
 import mk.focuslab.exception.ForbiddenActionException;
@@ -13,6 +14,7 @@ import mk.focuslab.model.SessionNote;
 import mk.focuslab.model.User;
 import mk.focuslab.repository.SessionNoteRepository;
 import mk.focuslab.repository.SessionRepository;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SessionNoteService {
+
+    /** Прегледот е за читање наназад, не архива — доволно е последното. */
+    private static final int OVERVIEW_LIMIT = 200;
+
     private final SessionNoteRepository noteRepository;
     private final SessionRepository sessionRepository;
     private final DtoMapper mapper;
@@ -33,6 +39,18 @@ public class SessionNoteService {
 
         return noteRepository.findBySessionIdOrderByCreatedAtDesc(sessionId).stream()
                 .map(mapper::toSessionNoteResponse)
+                .toList();
+    }
+
+    /** Сите забелешки од сите сесии, по избор филтрирани по предмет. */
+    public List<MentorNoteResponse> listAllNotes(Long subjectId, User viewer) {
+        requireApprovedMentor(viewer);
+
+        return noteRepository.findForOverview(
+                        subjectId == null ? SessionNoteRepository.ANY_SUBJECT : subjectId,
+                        Limit.of(OVERVIEW_LIMIT))
+                .stream()
+                .map(mapper::toMentorNoteResponse)
                 .toList();
     }
 

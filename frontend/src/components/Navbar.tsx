@@ -25,6 +25,7 @@ const LINKS: Record<Role, NavItem[]> = {
     { to: '/mentor', label: 'Преглед', end: true },
     { to: '/calendar', label: 'Календар' },
     { to: '/feed', label: 'Постови' },
+    { to: '/mentor/notes', label: 'Забелешки' },
     { to: '/mentor/create-session', label: 'Нова сесија' },
   ],
   ADMIN: [

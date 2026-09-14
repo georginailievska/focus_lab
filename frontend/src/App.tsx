@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Home from './pages/Home'
 import MentorDashboard from './pages/MentorDashboard'
+import MentorNotes from './pages/MentorNotes'
 import AdminDashboard from './pages/AdminDashboard'
 import BrowseSessions from './pages/BrowseSessions'
 import SessionDetails from './pages/SessionDetails'
@@ -125,6 +126,15 @@ export default function App() {
         element={
           <ProtectedRoute allow={['MENTOR']}>
             <EditSession />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/mentor/notes"
+        element={
+          <ProtectedRoute allow={['MENTOR']}>
+            <MentorNotes />
           </ProtectedRoute>
         }
       />

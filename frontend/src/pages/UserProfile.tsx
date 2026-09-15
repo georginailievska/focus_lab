@@ -2,6 +2,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { ProfileHeader } from '../components/ProfileHeader'
 import { SessionCard } from '../components/SessionCard'
+import { StudentComments } from '../components/StudentComments'
 import { Alert, Button, EmptyState, Section, Skeleton, StatCard } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { useAsync } from '../hooks/useAsync'
@@ -93,6 +94,10 @@ export default function UserProfile() {
                 emoji="✅"
               />
             </div>
+          )}
+
+          {data.profile.role === 'STUDENT' && user?.role === 'MENTOR' && (
+            <StudentComments studentId={userId} studentName={data.profile.fullName} />
           )}
         </div>
       )}

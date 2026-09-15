@@ -186,6 +186,15 @@ export interface PostComment {
   createdAt: string
 }
 
+export interface StudentComment {
+  id: number
+  author: Author
+  text: string
+  /** false значи што само авторот го гледа коментарот. */
+  sharedWithMentors: boolean
+  createdAt: string
+}
+
 export interface Overlap {
   sessionId: number
   title: string

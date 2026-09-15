@@ -6,6 +6,7 @@ import type {
   Session,
   SessionApplication,
   SessionNote,
+  StudentComment,
 } from '../types'
 
 export function getMySessions() {
@@ -19,6 +20,31 @@ export function getPendingRequests() {
 /** Другите одобрени ментори — за избор на ко-ментор. */
 export function getColleagues() {
   return api.get<Mentor[]>('/mentor/colleagues').then((res) => res.data)
+}
+
+// Коментари на менторите за студент; видливоста ја бира авторот
+export function getStudentComments(studentId: number) {
+  return api
+    .get<StudentComment[]>(`/mentor/students/${studentId}/comments`)
+    .then((res) => res.data)
+}
+
+export function addStudentComment(studentId: number, text: string, sharedWithMentors: boolean) {
+  return api
+    .post<StudentComment>(`/mentor/students/${studentId}/comments`, { text, sharedWithMentors })
+    .then((res) => res.data)
+}
+
+export function changeCommentVisibility(commentId: number, sharedWithMentors: boolean) {
+  return api
+    .patch<StudentComment>(`/mentor/student-comments/${commentId}`, null, {
+      params: { sharedWithMentors },
+    })
+    .then((res) => res.data)
+}
+
+export function deleteStudentComment(commentId: number) {
+  return api.delete(`/mentor/student-comments/${commentId}`).then(() => undefined)
 }
 
 // Пријавите на една сесија — само за менторите што ја водат

@@ -9,8 +9,11 @@ import mk.focuslab.dto.MentorResponse;
 import mk.focuslab.dto.SessionNoteRequest;
 import mk.focuslab.dto.SessionNoteResponse;
 import mk.focuslab.dto.SessionResponse;
+import mk.focuslab.dto.StudentCommentRequest;
+import mk.focuslab.dto.StudentCommentResponse;
 import mk.focuslab.security.UserPrincipal;
 import mk.focuslab.service.SessionNoteService;
+import mk.focuslab.service.StudentCommentService;
 import mk.focuslab.service.SessionService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +21,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -38,6 +42,7 @@ public class MentorController {
 
     private final SessionService sessionService;
     private final SessionNoteService noteService;
+    private final StudentCommentService commentService;
 
     @GetMapping("/sessions")
     public ResponseEntity<List<SessionResponse>> mySessions(@AuthenticationPrincipal UserPrincipal principal) {
@@ -101,6 +106,44 @@ public class MentorController {
             @AuthenticationPrincipal UserPrincipal principal
     ) {
         return ResponseEntity.ok(noteService.addNote(sessionId, request, principal.getUser()));
+    }
+
+    // Коментари на ментори за студент; видливоста ја бира авторот
+    @GetMapping("/students/{studentId}/comments")
+    public ResponseEntity<List<StudentCommentResponse>> studentComments(
+            @PathVariable Long studentId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(commentService.listComments(studentId, principal.getUser()));
+    }
+
+    @PostMapping("/students/{studentId}/comments")
+    public ResponseEntity<StudentCommentResponse> addStudentComment(
+            @PathVariable Long studentId,
+            @Valid @RequestBody StudentCommentRequest request,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(
+                commentService.addComment(studentId, request, principal.getUser()));
+    }
+
+    @PatchMapping("/student-comments/{commentId}")
+    public ResponseEntity<StudentCommentResponse> changeCommentVisibility(
+            @PathVariable Long commentId,
+            @RequestParam boolean sharedWithMentors,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(commentService.changeVisibility(
+                commentId, sharedWithMentors, principal.getUser()));
+    }
+
+    @DeleteMapping("/student-comments/{commentId}")
+    public ResponseEntity<Void> deleteStudentComment(
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        commentService.deleteComment(commentId, principal.getUser());
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/notes/{noteId}")

@@ -70,10 +70,10 @@ public class EmailService {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onApplicationDecided(ApplicationDecidedEvent event) {
         String body = event.accepted()
-                ? "Прифатена си на сесијата \"" + event.sessionTitle() + "\", "
+                ? "Пријавата ти е прифатена за сесијата \"" + event.sessionTitle() + "\", "
                         + event.sessionStartTime().format(DATE_TIME) + ".\n\n"
                         + "Детали: " + link("/sessions/" + event.sessionId())
-                : "За жал, овој пат не си прифатена на сесијата \"" + event.sessionTitle() + "\".\n\n"
+                : "За жал, пријавата за сесијата \"" + event.sessionTitle() + "\" не е прифатена овој пат.\n\n"
                         + "Местата се ограничени — побарај друга сесија по истиот предмет: "
                         + link("/sessions");
 
@@ -136,7 +136,7 @@ public class EmailService {
                         + frontendBaseUrl.trim() + "/reset-password?token=" + event.token() + "\n\n"
                         + "Линкот важи " + event.validMinutes()
                         + " минути и може да се искористи само еднаш.\n"
-                        + "Ако не си го побарала ти, игнорирај ја пораката — лозинката останува непроменета."
+                        + "Ако барањето не е твое, игнорирај ја пораката — лозинката останува непроменета."
                         + SIGNATURE
         );
     }

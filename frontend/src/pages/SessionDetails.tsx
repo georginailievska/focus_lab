@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { Avatar } from '../components/Avatar'
 import { SessionNotes } from '../components/SessionNotes'
-import { ApplicationStatusBadge } from '../components/StatusBadge'
+import { ApplicationOutcome } from '../components/ApplicationOutcome'
 import { SubjectBadge } from '../components/SubjectBadge'
 import { Alert, Badge, Button, Card, Skeleton } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -160,19 +160,29 @@ export default function SessionDetails() {
 
         {actionError && <Alert>{actionError}</Alert>}
 
-        {isStudent && !finished && (
+        {/* Исходот стои и на завршена сесија: студентот се враќа да провери */}
+        {isStudent && myApplication && <ApplicationOutcome status={myApplication.status} />}
+
+        {isStudent && (
           <div className="flex flex-wrap items-center gap-3 border-t border-line pt-5">
-            {hasActiveApplication && myApplication ? (
-              <>
-                <ApplicationStatusBadge status={myApplication.status} />
-                <Button
-                  variant="secondary"
-                  disabled={submitting}
-                  onClick={() => runAction(() => cancelApplication(sessionId), 'Откажувањето не успеа.')}
-                >
-                  Откажи пријава
-                </Button>
-              </>
+            {finished ? (
+              <p className="text-sm text-ink-mute">
+                Сесијата е завршена — пријавувањето е затворено.
+              </p>
+            ) : hasActiveApplication ? (
+              <Button
+                variant="secondary"
+                disabled={submitting}
+                onClick={() => runAction(() => cancelApplication(sessionId), 'Откажувањето не успеа.')}
+              >
+                Откажи пријава
+              </Button>
+            ) : myApplication ? (
+              // Одбиена пријава: серверот не дозволува повторно пријавување на
+              // истата сесија, па копчето би водело само до грешка.
+              <p className="text-sm text-ink-mute">
+                Повторно пријавување на истата сесија не е возможно.
+              </p>
             ) : (
               <Button
                 disabled={submitting || full}
@@ -182,12 +192,6 @@ export default function SessionDetails() {
               </Button>
             )}
           </div>
-        )}
-
-        {isStudent && finished && (
-          <p className="border-t border-line pt-5 text-sm text-ink-mute">
-            Сесијата е завршена — пријавувањето е затворено.
-          </p>
         )}
       </Card>
 

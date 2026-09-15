@@ -18,7 +18,7 @@ const OUTCOME: Record<ApplicationStatus, Outcome> = {
   PENDING: {
     emoji: '⏳',
     title: 'Пријавата чека одлука',
-    detail: 'Менторот ќе одлучи пред сесијата. Штом одлучи, добиваш email.',
+    detail: 'Пред сесијата ќе бидеш известен/а на email дали е одобрено да присуствуваш на сесијата.',
     box: 'border-warm/50 bg-warm/10',
   },
   REJECTED: {

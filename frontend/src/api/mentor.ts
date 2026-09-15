@@ -1,5 +1,12 @@
 import { api } from './client'
-import type { Mentor, MentorNote, Session, SessionApplication, SessionNote } from '../types'
+import type {
+  Mentor,
+  MentorNote,
+  Overlap,
+  Session,
+  SessionApplication,
+  SessionNote,
+} from '../types'
 
 export function getMySessions() {
   return api.get<Session[]>('/mentor/sessions').then((res) => res.data)
@@ -12,6 +19,15 @@ export function getPendingRequests() {
 /** Другите одобрени ментори — за избор на ко-ментор. */
 export function getColleagues() {
   return api.get<Mentor[]>('/mentor/colleagues').then((res) => res.data)
+}
+
+// Кои сесии паѓаат во периодот што се избира во формата
+export function getOverlaps(params: {
+  startTime: string
+  endTime: string
+  sessionId?: number
+}) {
+  return api.get<Overlap[]>('/mentor/overlaps', { params }).then((res) => res.data)
 }
 
 // Сите забелешки од сите сесии — за табот „Забелешки"

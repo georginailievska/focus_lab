@@ -3,6 +3,7 @@ package mk.focuslab.service;
 import lombok.RequiredArgsConstructor;
 import mk.focuslab.dto.ApplicationResponse;
 import mk.focuslab.dto.MentorResponse;
+import mk.focuslab.dto.OverlapResponse;
 import mk.focuslab.dto.SessionRequest;
 import mk.focuslab.dto.SessionResponse;
 import mk.focuslab.event.ApplicationReceivedEvent;
@@ -30,6 +31,7 @@ import mk.focuslab.repository.SessionRepository;
 import mk.focuslab.repository.SubjectRepository;
 import mk.focuslab.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -51,6 +53,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SessionService {
+
+    /** Доволно за порака; никој нема да чита триесет преклопувања. */
+    private static final int OVERLAP_LIMIT = 10;
+
     private final SessionRepository sessionRepository;
     private final SubjectRepository subjectRepository;
     private final UserRepository userRepository;
@@ -58,6 +64,39 @@ public class SessionService {
     private final SessionNoteRepository noteRepository;
     private final ApplicationEventPublisher events;
     private final DtoMapper mapper;
+
+
+    // ------------------------------------------------------------ преклопувања
+
+    /** Сесиите што паѓаат во избраниот период — информација за менторот, не забрана. */
+    public List<OverlapResponse> findOverlaps(
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            Long excludedSessionId,
+            User mentor
+    ) {
+        requireApprovedMentor(mentor);
+
+        // Формата прашува и додека времето е полувнесено; тогаш нема што да се бара
+        if (startTime == null || endTime == null || !endTime.isAfter(startTime)) {
+            return List.of();
+        }
+
+        List<Session> overlapping = sessionRepository.findOverlapping(
+                startTime,
+                endTime,
+                excludedSessionId == null ? SessionRepository.NO_EXCLUSION : excludedSessionId,
+                Limit.of(OVERLAP_LIMIT));
+
+        return overlapping.stream()
+                .map(session -> mapper.toOverlapResponse(session, isMentorOf(session, mentor)))
+                .toList();
+    }
+
+    private boolean isMentorOf(Session session, User mentor) {
+        return session.getMentors().stream()
+                .anyMatch(existing -> existing.getId().equals(mentor.getId()));
+    }
 
     // ---------------------------------------------------------------- пишување
 
@@ -161,10 +200,7 @@ public class SessionService {
     }
 
     private void requireMentorOfSession(Session session, User mentor) {
-        boolean owns = session.getMentors().stream()
-                .anyMatch(existing -> existing.getId().equals(mentor.getId()));
-
-        if (!owns) {
+        if (!isMentorOf(session, mentor)) {
             throw new ForbiddenActionException("Само менторите на сесијата можат да ја менуваат.");
         }
     }

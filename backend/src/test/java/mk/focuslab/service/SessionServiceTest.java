@@ -19,6 +19,7 @@ import mk.focuslab.model.Subject;
 import mk.focuslab.model.User;
 import mk.focuslab.repository.SessionApplicationRepository;
 import mk.focuslab.repository.SessionNoteRepository;
+import org.springframework.data.domain.Limit;
 import mk.focuslab.repository.SessionRepository;
 import mk.focuslab.repository.SubjectRepository;
 import mk.focuslab.repository.UserRepository;
@@ -43,6 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -377,6 +379,59 @@ class SessionServiceTest {
         assertThatThrownBy(() -> sessionService.createSession(request, mentor(1L, MentorStatus.APPROVED)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("5 минути");
+    }
+
+    // ------------------------------------------------------- findOverlaps
+
+    @Test
+    @DisplayName("Преклопувања: без сесија за изземање оди сентинелот, со неа — нејзиното id")
+    void overlapsPassExclusion() {
+        User owner = mentor(1L, MentorStatus.APPROVED);
+        when(sessionRepository.findOverlapping(any(), any(), anyLong(), any(Limit.class)))
+                .thenReturn(List.of());
+
+        sessionService.findOverlaps(TOMORROW_10, TOMORROW_10.plusHours(2), null, owner);
+        sessionService.findOverlaps(TOMORROW_10, TOMORROW_10.plusHours(2), 7L, owner);
+
+        ArgumentCaptor<Long> excluded = ArgumentCaptor.forClass(Long.class);
+        verify(sessionRepository, times(2))
+                .findOverlapping(any(), any(), excluded.capture(), any(Limit.class));
+
+        assertThat(excluded.getAllValues())
+                .containsExactly(SessionRepository.NO_EXCLUSION, 7L);
+    }
+
+    @Test
+    @DisplayName("Својата сесија во преклопувањата е означена како моја")
+    void overlapsMarkOwnSessions() {
+        User owner = mentor(1L, MentorStatus.APPROVED);
+        User other = mentor(2L, MentorStatus.APPROVED);
+
+        Session mine = session(TOMORROW_10, TOMORROW_10.plusHours(2));
+        mine.setMentors(new java.util.HashSet<>(Set.of(owner)));
+        Session theirs = session(TOMORROW_10, TOMORROW_10.plusHours(2));
+        theirs.setMentors(new java.util.HashSet<>(Set.of(other)));
+
+        when(sessionRepository.findOverlapping(any(), any(), anyLong(), any(Limit.class)))
+                .thenReturn(List.of(mine, theirs));
+
+        sessionService.findOverlaps(TOMORROW_10, TOMORROW_10.plusHours(2), null, owner);
+
+        ArgumentCaptor<Boolean> flags = ArgumentCaptor.forClass(Boolean.class);
+        verify(mapper, times(2)).toOverlapResponse(any(Session.class), flags.capture());
+
+        assertThat(flags.getAllValues()).containsExactly(true, false);
+    }
+
+    @Test
+    @DisplayName("Полувнесено време не оди до базата")
+    void overlapsSkipInvalidRange() {
+        User owner = mentor(1L, MentorStatus.APPROVED);
+
+        assertThat(sessionService.findOverlaps(TOMORROW_10, TOMORROW_10, null, owner)).isEmpty();
+        assertThat(sessionService.findOverlaps(null, TOMORROW_10, null, owner)).isEmpty();
+
+        verify(sessionRepository, never()).findOverlapping(any(), any(), anyLong(), any(Limit.class));
     }
 
     // ------------------------------------------- updateSession / cancelSession

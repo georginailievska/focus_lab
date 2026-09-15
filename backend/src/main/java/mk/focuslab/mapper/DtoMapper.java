@@ -7,6 +7,7 @@ import mk.focuslab.dto.CommentResponse;
 import mk.focuslab.dto.AuthResponse;
 import mk.focuslab.dto.MentorNoteResponse;
 import mk.focuslab.dto.MentorResponse;
+import mk.focuslab.dto.OverlapResponse;
 import mk.focuslab.dto.PostResponse;
 import mk.focuslab.dto.ProfileResponse;
 import mk.focuslab.dto.ProfileStats;
@@ -54,6 +55,21 @@ public class DtoMapper {
 
     public MentorResponse toMentorResponse(User mentor) {
         return new MentorResponse(mentor.getId(), mentor.getFullName(), avatarUrl(mentor));
+    }
+
+    public OverlapResponse toOverlapResponse(Session session, boolean mine) {
+        return new OverlapResponse(
+                session.getId(),
+                session.getTitle(),
+                session.getStartTime(),
+                session.getEndTime(),
+                toSubjectResponse(session.getSubject()),
+                session.getMentors().stream()
+                        .map(this::toMentorResponse)
+                        .sorted(Comparator.comparing(MentorResponse::fullName))
+                        .toList(),
+                mine
+        );
     }
 
     public SubjectResponse toSubjectResponse(Subject subject) {

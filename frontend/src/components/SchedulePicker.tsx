@@ -1,3 +1,4 @@
+import { OverlapNotice } from './OverlapNotice'
 import { Button, Field, Input, TimeSelect } from './ui'
 import {
   DAY_END,
@@ -23,12 +24,19 @@ interface SchedulePickerProps {
   value: Schedule
   onChange: (next: Schedule) => void
   allowPast?: boolean
+  /** Сесијата што се уредува — не се брои како преклопување со самата себе. */
+  sessionId?: number
 }
 
 /** Готови траења — еден клик наместо пресметување на времето на крај. */
 const DURATIONS = [45, 60, 90, 120]
 
-export function SchedulePicker({ value, onChange, allowPast = false }: SchedulePickerProps) {
+export function SchedulePicker({
+  value,
+  onChange,
+  allowPast = false,
+  sessionId,
+}: SchedulePickerProps) {
   const earliest = allowPast || !value.date ? DAY_START : earliestStartFor(value.date)
   const duration = Math.max(0, toMinutes(value.end) - toMinutes(value.start))
 
@@ -107,6 +115,8 @@ export function SchedulePicker({ value, onChange, allowPast = false }: ScheduleP
       </div>
 
       <p className="text-xs text-ink-mute">Работно време: 08:00 – 20:00 часот.</p>
+
+      <OverlapNotice schedule={value} excludeSessionId={sessionId} />
     </>
   )
 }

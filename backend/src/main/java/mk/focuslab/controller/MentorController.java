@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import mk.focuslab.dto.ApplicationResponse;
 import mk.focuslab.dto.MentorNoteResponse;
+import mk.focuslab.dto.OverlapResponse;
 import mk.focuslab.dto.MentorResponse;
 import mk.focuslab.dto.SessionNoteRequest;
 import mk.focuslab.dto.SessionNoteResponse;
@@ -11,6 +12,7 @@ import mk.focuslab.dto.SessionResponse;
 import mk.focuslab.security.UserPrincipal;
 import mk.focuslab.service.SessionNoteService;
 import mk.focuslab.service.SessionService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 // Целиот /api/mentor/** е веќе ограничен на hasRole("MENTOR") во SecurityConfig
@@ -29,6 +32,10 @@ import java.util.List;
 @RequestMapping("/api/mentor")
 @RequiredArgsConstructor
 public class MentorController {
+
+    // Форматот што го праќа формата; ISO со зона тука само би збркал
+    private static final String LOCAL_DATE_TIME = "yyyy-MM-dd'T'HH:mm:ss";
+
     private final SessionService sessionService;
     private final SessionNoteService noteService;
 
@@ -46,6 +53,18 @@ public class MentorController {
     @GetMapping("/colleagues")
     public ResponseEntity<List<MentorResponse>> colleagues(@AuthenticationPrincipal UserPrincipal principal) {
         return ResponseEntity.ok(sessionService.listApprovedMentorsExcept(principal.getUser()));
+    }
+
+    // Кои сесии паѓаат во периодот што менторот го избира во формата
+    @GetMapping("/overlaps")
+    public ResponseEntity<List<OverlapResponse>> overlaps(
+            @RequestParam @DateTimeFormat(pattern = LOCAL_DATE_TIME) LocalDateTime startTime,
+            @RequestParam @DateTimeFormat(pattern = LOCAL_DATE_TIME) LocalDateTime endTime,
+            @RequestParam(required = false) Long sessionId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(
+                sessionService.findOverlaps(startTime, endTime, sessionId, principal.getUser()));
     }
 
     // Сите забелешки на едно место, по избор филтрирани по предмет

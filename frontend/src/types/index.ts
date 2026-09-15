@@ -186,6 +186,17 @@ export interface PostComment {
   createdAt: string
 }
 
+export interface Overlap {
+  sessionId: number
+  title: string
+  startTime: string
+  endTime: string
+  subject: Subject
+  mentors: Mentor[]
+  /** Менторот што прашува е меѓу менторите на таа сесија. */
+  mine: boolean
+}
+
 export interface MentorNote extends SessionNote {
   sessionId: number
   sessionTitle: string

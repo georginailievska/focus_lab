@@ -252,6 +252,7 @@ export default function EditSession() {
 
           <SchedulePicker
             allowPast
+            sessionId={sessionId}
             value={{ date: form.date, start: form.start, end: form.end }}
             onChange={(next) => setForm((current) => (current ? { ...current, ...next } : current))}
           />

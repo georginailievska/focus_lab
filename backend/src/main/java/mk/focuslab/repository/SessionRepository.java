@@ -3,6 +3,7 @@ package mk.focuslab.repository;
 import jakarta.persistence.LockModeType;
 import mk.focuslab.model.Session;
 import mk.focuslab.model.Subject;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -48,6 +49,26 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
             @Param("subjectId") Long subjectId,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to
+    );
+
+    /** „Нема што да се изземе" — при ново закажување нема постоечка сесија. */
+    long NO_EXCLUSION = 0L;
+
+    // Преклопување: почнува пред нашиот крај и завршува по нашиот почеток.
+    // Сесија што почнува точно кога другата завршува не е преклопување.
+    @EntityGraph(attributePaths = {"subject", "mentors"})
+    @Query("""
+            select distinct s from Session s
+            where s.id <> :excludedId
+              and s.startTime < :endTime
+              and s.endTime > :startTime
+            order by s.startTime asc
+            """)
+    List<Session> findOverlapping(
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime,
+            @Param("excludedId") long excludedId,
+            Limit limit
     );
 
     // За Admin Overview статистиката ("Active Sessions")

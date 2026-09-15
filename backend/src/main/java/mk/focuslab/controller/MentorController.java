@@ -76,6 +76,16 @@ public class MentorController {
         return ResponseEntity.ok(noteService.listAllNotes(subjectId, principal.getUser()));
     }
 
+    // Пријавите на една сесија: прифатени, на чекање и одбиени
+    @GetMapping("/sessions/{sessionId}/applications")
+    public ResponseEntity<List<ApplicationResponse>> sessionApplications(
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(
+                sessionService.listApplicationsForSession(sessionId, principal.getUser()));
+    }
+
     @GetMapping("/sessions/{sessionId}/notes")
     public ResponseEntity<List<SessionNoteResponse>> notes(
             @PathVariable Long sessionId,

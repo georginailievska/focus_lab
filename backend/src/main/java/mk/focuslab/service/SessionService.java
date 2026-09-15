@@ -66,6 +66,19 @@ public class SessionService {
     private final DtoMapper mapper;
 
 
+    // ------------------------------------------------- пријави на една сесија
+
+    /** Сите пријави на сесијата — само за менторите што ја водат. */
+    public List<ApplicationResponse> listApplicationsForSession(Long sessionId, User mentor) {
+        Session session = sessionRepository.findWithSubjectById(sessionId)
+                .orElseThrow(() -> sessionNotFound(sessionId));
+
+        requireMentorOfSession(session, mentor);
+
+        return mapper.toApplicationResponses(
+                applicationRepository.findBySessionIdWithStudent(sessionId));
+    }
+
     // ------------------------------------------------------------ преклопувања
 
     /** Сесиите што паѓаат во избраниот период — информација за менторот, не забрана. */

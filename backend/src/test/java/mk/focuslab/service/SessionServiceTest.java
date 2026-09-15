@@ -43,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -379,6 +380,42 @@ class SessionServiceTest {
         assertThatThrownBy(() -> sessionService.createSession(request, mentor(1L, MentorStatus.APPROVED)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("5 минути");
+    }
+
+    // --------------------------------------------- listApplicationsForSession
+
+    @Test
+    @DisplayName("Списокот на пријави го гледа само ментор на таа сесија")
+    void applicationsOnlyForSessionMentor() {
+        User owner = mentor(1L, MentorStatus.APPROVED);
+        User outsider = mentor(2L, MentorStatus.APPROVED);
+        Session existing = session(TOMORROW_10, TOMORROW_10.plusHours(2));
+        existing.setMentors(new java.util.HashSet<>(Set.of(owner)));
+
+        when(sessionRepository.findWithSubjectById(7L)).thenReturn(Optional.of(existing));
+
+        assertThatThrownBy(() -> sessionService.listApplicationsForSession(7L, outsider))
+                .isInstanceOf(ForbiddenActionException.class);
+
+        verify(applicationRepository, never()).findBySessionIdWithStudent(any());
+    }
+
+    @Test
+    @DisplayName("Менторот на сесијата ги добива сите пријави, вклучно одбиените")
+    void applicationsIncludeRejected() {
+        User owner = mentor(1L, MentorStatus.APPROVED);
+        Session existing = session(TOMORROW_10, TOMORROW_10.plusHours(2));
+        existing.setMentors(new java.util.HashSet<>(Set.of(owner)));
+
+        when(sessionRepository.findWithSubjectById(7L)).thenReturn(Optional.of(existing));
+        when(applicationRepository.findBySessionIdWithStudent(7L)).thenReturn(List.of(
+                application(existing, student(5L), ApplicationStatus.ACCEPTED),
+                application(existing, student(6L), ApplicationStatus.REJECTED)));
+
+        sessionService.listApplicationsForSession(7L, owner);
+
+        verify(applicationRepository).findBySessionIdWithStudent(7L);
+        verify(mapper).toApplicationResponses(argThat(list -> list.size() == 2));
     }
 
     // ------------------------------------------------------- findOverlaps

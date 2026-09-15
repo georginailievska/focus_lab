@@ -21,6 +21,13 @@ export function getColleagues() {
   return api.get<Mentor[]>('/mentor/colleagues').then((res) => res.data)
 }
 
+// Пријавите на една сесија — само за менторите што ја водат
+export function getSessionApplications(sessionId: number) {
+  return api
+    .get<SessionApplication[]>(`/mentor/sessions/${sessionId}/applications`)
+    .then((res) => res.data)
+}
+
 // Кои сесии паѓаат во периодот што се избира во формата
 export function getOverlaps(params: {
   startTime: string

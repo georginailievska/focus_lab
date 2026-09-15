@@ -4,6 +4,7 @@ import Layout from '../components/Layout'
 import { Avatar } from '../components/Avatar'
 import { SessionNotes } from '../components/SessionNotes'
 import { ApplicationOutcome } from '../components/ApplicationOutcome'
+import { SessionApplicants } from '../components/SessionApplicants'
 import { SubjectBadge } from '../components/SubjectBadge'
 import { Alert, Badge, Button, Card, Skeleton } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -194,6 +195,12 @@ export default function SessionDetails() {
           </div>
         )}
       </Card>
+
+      {canEdit && (
+        <div className="mt-9">
+          <SessionApplicants sessionId={sessionId} />
+        </div>
+      )}
 
       {user?.role === 'MENTOR' && (
         <div className="mt-9">

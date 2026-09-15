@@ -60,6 +60,17 @@ public interface SessionApplicationRepository extends JpaRepository<SessionAppli
             @Param("excluded") ApplicationStatus excluded
     );
 
+    /** Сите пријави на една сесија — за списокот што го гледа менторот. */
+    @Query("""
+            select sa from SessionApplication sa
+            join fetch sa.student
+            join fetch sa.session s
+            join fetch s.subject
+            where s.id = :sessionId
+            order by sa.appliedAt asc
+            """)
+    List<SessionApplication> findBySessionIdWithStudent(@Param("sessionId") Long sessionId);
+
     @Modifying
     @Query("delete from SessionApplication sa where sa.session.id = :sessionId")
     void deleteBySessionId(@Param("sessionId") Long sessionId);

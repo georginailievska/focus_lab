@@ -9,8 +9,10 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.LinkedHashMap;
@@ -86,9 +88,21 @@ public class GlobalExceptionHandler {
         ));
     }
 
+    /** Пораката од библиотеката носи имена на полиња и класи — не оди кон клиентот. */
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage());
+        log.warn("Прекршена валидација: {}", ex.getMessage());
+        return build(HttpStatus.BAD_REQUEST, "Проверете ги внесените податоци.");
+    }
+
+    /** Погрешен тип или недостапен параметар — без ехо на внатрешната порака. */
+    @ExceptionHandler({
+            MethodArgumentTypeMismatchException.class,
+            MissingServletRequestParameterException.class
+    })
+    public ResponseEntity<ErrorResponse> handleBadParameter(Exception ex) {
+        log.warn("Невалиден параметар: {}", ex.getMessage());
+        return build(HttpStatus.BAD_REQUEST, "Барањето нема валидни параметри.");
     }
 
     /** Сè останато: детално во логот, неутрално кон корисникот. */

@@ -122,6 +122,16 @@ export default function SessionDetails() {
             <dd className="mt-0.5 text-ink">
               {sessionModeLabel(session.mode)}
               {session.location ? ` — ${session.location}` : ''}
+
+              {/* Линкот/салата серверот ги праќа само на прифатените и на
+                  менторите на сесијата — инаку тука нема што да се прикаже. */}
+              {!session.location && isStudent && (
+                <span className="mt-0.5 block text-xs text-ink-mute">
+                  {myApplication?.status === 'PENDING'
+                    ? 'Точното место го добиваш штом пријавата биде прифатена.'
+                    : 'Местото е достапно за прифатените студенти.'}
+                </span>
+              )}
             </dd>
           </div>
 

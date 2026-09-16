@@ -75,6 +75,10 @@ app:
     email: ${ADMIN_EMAIL:admin@focuslab.mk}
     password: ${ADMIN_PASSWORD:ChangeMe123!}
 
+  security:
+    # X-Forwarded-For се верува само зад proxy (docker-compose го поставува)
+    trust-forwarded-for: ${TRUST_FORWARDED_FOR:false}
+
   cors:
     # Може и повеќе origin-и, разделени со запирка
     allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}

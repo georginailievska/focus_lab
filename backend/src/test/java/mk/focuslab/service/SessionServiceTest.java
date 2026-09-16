@@ -310,7 +310,7 @@ class SessionServiceTest {
         when(sessionRepository.findStartingBetween(
                 from.atStartOfDay(), to.plusDays(1).atStartOfDay())).thenReturn(List.of());
 
-        assertThat(sessionService.listSessions(null, from, to)).isEmpty();
+        assertThat(sessionService.listSessions(null, from, to, student(5L))).isEmpty();
 
         // без период — стариот пат, целата листа
         verify(sessionRepository, never()).findAllByOrderByStartTimeAsc();
@@ -319,7 +319,7 @@ class SessionServiceTest {
     @Test
     @DisplayName("Половина период е грешка, не тивко игнорирање")
     void listSessionsRejectsHalfRange() {
-        assertThatThrownBy(() -> sessionService.listSessions(null, LocalDate.of(2026, 9, 1), null))
+        assertThatThrownBy(() -> sessionService.listSessions(null, LocalDate.of(2026, 9, 1), null, student(5L)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("почетен и краен");
     }
@@ -328,7 +328,7 @@ class SessionServiceTest {
     @DisplayName("Обратен период е грешка")
     void listSessionsRejectsReversedRange() {
         assertThatThrownBy(() -> sessionService.listSessions(
-                null, LocalDate.of(2026, 10, 1), LocalDate.of(2026, 9, 1)))
+                null, LocalDate.of(2026, 10, 1), LocalDate.of(2026, 9, 1), student(5L)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("пред почетниот");
     }
@@ -416,6 +416,67 @@ class SessionServiceTest {
 
         verify(applicationRepository).findBySessionIdWithStudent(7L);
         verify(mapper).toApplicationResponses(argThat(list -> list.size() == 2));
+    }
+
+    // --------------------------------------------- видливост на линкот/салата
+
+    @Test
+    @DisplayName("Студент што не е прифатен не го добива линкот за средба")
+    void locationHiddenFromNonAcceptedStudent() {
+        User viewer = student(5L);
+        Session existing = session(TOMORROW_10, TOMORROW_10.plusHours(2));
+        existing.setId(7L);
+        existing.setLocation("https://teams.microsoft.com/tajno");
+
+        when(sessionRepository.findWithSubjectById(7L)).thenReturn(Optional.of(existing));
+        when(applicationRepository.findSessionIdsByStudentAndStatus(5L, ApplicationStatus.ACCEPTED))
+                .thenReturn(Set.of());
+
+        sessionService.getSession(7L, viewer);
+
+        ArgumentCaptor<Boolean> visible = ArgumentCaptor.forClass(Boolean.class);
+        verify(mapper).toSessionResponse(any(Session.class), anyLong(), anyLong(), visible.capture());
+
+        assertThat(visible.getValue()).isFalse();
+    }
+
+    @Test
+    @DisplayName("Прифатен студент го добива линкот")
+    void locationVisibleToAcceptedStudent() {
+        User viewer = student(5L);
+        Session existing = session(TOMORROW_10, TOMORROW_10.plusHours(2));
+        existing.setId(7L);
+
+        when(sessionRepository.findWithSubjectById(7L)).thenReturn(Optional.of(existing));
+        when(applicationRepository.findSessionIdsByStudentAndStatus(5L, ApplicationStatus.ACCEPTED))
+                .thenReturn(Set.of(7L));
+
+        sessionService.getSession(7L, viewer);
+
+        ArgumentCaptor<Boolean> visible = ArgumentCaptor.forClass(Boolean.class);
+        verify(mapper).toSessionResponse(any(Session.class), anyLong(), anyLong(), visible.capture());
+
+        assertThat(visible.getValue()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Ментор што не ја води сесијата не го добива линкот")
+    void locationHiddenFromForeignMentor() {
+        User owner = mentor(1L, MentorStatus.APPROVED);
+        User outsider = mentor(2L, MentorStatus.APPROVED);
+
+        Session existing = session(TOMORROW_10, TOMORROW_10.plusHours(2));
+        existing.setId(7L);
+        existing.setMentors(new java.util.HashSet<>(Set.of(owner)));
+
+        when(sessionRepository.findWithSubjectById(7L)).thenReturn(Optional.of(existing));
+
+        sessionService.getSession(7L, outsider);
+
+        ArgumentCaptor<Boolean> visible = ArgumentCaptor.forClass(Boolean.class);
+        verify(mapper).toSessionResponse(any(Session.class), anyLong(), anyLong(), visible.capture());
+
+        assertThat(visible.getValue()).isFalse();
     }
 
     // ------------------------------------------------------- findOverlaps

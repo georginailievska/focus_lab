@@ -99,6 +99,8 @@ public class PasswordService {
 
         User user = token.getUser();
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        // Стариот токен веднаш престанува да важи — види JwtUtil.isTokenValid
+        user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
 
         token.setUsedAt(Instant.now());
@@ -124,6 +126,8 @@ public class PasswordService {
         }
 
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        // Стариот токен веднаш престанува да важи — види JwtUtil.isTokenValid
+        user.setTokenVersion(user.getTokenVersion() + 1);
         userRepository.save(user);
 
         // Ако некој побарал линк за оваа сметка, тој линк веќе не важи.

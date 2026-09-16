@@ -34,6 +34,7 @@ public class JwtUtil {
                 .subject(user.getEmail())
                 .claim("role", user.getRole().name())
                 .claim("userId", user.getId())
+                .claim("tokenVersion", user.getTokenVersion())
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)
@@ -44,13 +45,31 @@ public class JwtUtil {
         return extractClaim(token, Claims::getSubject);
     }
 
+    /**
+     * Токенот важи ако потписот е наш, адресата се совпаѓа, не е истечен и
+     * носи тековната верзија на корисникот. Последното е она што прави
+     * промената на лозинка веднаш да го поништи стариот токен.
+     */
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
+            if (!(userDetails instanceof UserPrincipal principal)) {
+                return false;
+            }
+
             String email = extractEmail(token);
-            return email.equals(userDetails.getUsername()) && !isExpired(token);
+
+            return email.equals(principal.getUsername())
+                    && !isExpired(token)
+                    && extractTokenVersion(token) == principal.getUser().getTokenVersion();
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /** Токен издаден пред полето да постоеше нема claim — тој се смета за стар. */
+    private int extractTokenVersion(String token) {
+        Integer version = extractClaim(token, claims -> claims.get("tokenVersion", Integer.class));
+        return version == null ? -1 : version;
     }
 
     private boolean isExpired(String token) {

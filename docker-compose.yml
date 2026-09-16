@@ -37,6 +37,11 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@focuslab.mk}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ве молиме постави ADMIN_PASSWORD во .env}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
+      # nginx стои пред backend-от, па X-Forwarded-For е вистинската адреса на
+      # клиентот и ограничувањето на најави брои по клиент, не по proxy.
+      TRUST_FORWARDED_FOR: "true"
+    # Во продукција овој порт не се објавува: ако backend-от е достапен директно,
+    # клиентот може сам да прати X-Forwarded-For и да го измами ограничувањето.
     ports:
       - "8080:8080"
 

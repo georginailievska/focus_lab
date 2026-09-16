@@ -29,14 +29,19 @@ public class SessionController {
     public ResponseEntity<List<SessionResponse>> listSessions(
             @RequestParam(required = false) Long subjectId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @AuthenticationPrincipal UserPrincipal principal
     ) {
-        return ResponseEntity.ok(sessionService.listSessions(subjectId, from, to));
+        return ResponseEntity.ok(
+                sessionService.listSessions(subjectId, from, to, principal.getUser()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<SessionResponse> getSession(@PathVariable Long id) {
-        return ResponseEntity.ok(sessionService.getSession(id));
+    public ResponseEntity<SessionResponse> getSession(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrincipal principal
+    ) {
+        return ResponseEntity.ok(sessionService.getSession(id, principal.getUser()));
     }
 
     @GetMapping("/my-applications")

@@ -109,7 +109,17 @@ public class DtoMapper {
         );
     }
 
-    public SessionResponse toSessionResponse(Session session, long applicantsCount, long approvedCount) {
+    /**
+     * @param locationVisible линкот или салата се праќаат само на менторите на
+     *                        сесијата, на прифатените студенти и на админ —
+     *                        инаку секој најавен би можел да влезе на средбата.
+     */
+    public SessionResponse toSessionResponse(
+            Session session,
+            long applicantsCount,
+            long approvedCount,
+            boolean locationVisible
+    ) {
         return new SessionResponse(
                 session.getId(),
                 session.getTitle(),
@@ -120,7 +130,7 @@ public class DtoMapper {
                         .sorted(Comparator.comparing(MentorResponse::fullName))
                         .toList(),
                 session.getMode(),
-                session.getLocation(),
+                locationVisible ? session.getLocation() : null,
                 session.getStartTime(),
                 session.getEndTime(),
                 applicantsCount,

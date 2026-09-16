@@ -7,6 +7,7 @@ import mk.focuslab.dto.ProfileResponse;
 import mk.focuslab.dto.ProfileStats;
 import mk.focuslab.dto.SubjectResponse;
 import mk.focuslab.dto.UpdateProfileRequest;
+import mk.focuslab.exception.ForbiddenActionException;
 import mk.focuslab.exception.ResourceNotFoundException;
 import mk.focuslab.mapper.DtoMapper;
 import mk.focuslab.model.ApplicationStatus;
@@ -80,9 +81,23 @@ public class ProfileService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Не постои корисник со ID " + userId));
 
+        requireCanView(user, viewer);
+
         String visibleEmail = viewer.getRole() == Role.ADMIN ? user.getEmail() : null;
 
         return mapper.toProfileResponse(user, visibleEmail, null, statsOf(user));
+    }
+
+    /**
+     * Студентот отвора само профил на ментор. Без ова, кој и да е најавен
+     * можеше да ги излиста сите профили редејќи ID-а во адресата.
+     */
+    private void requireCanView(User user, User viewer) {
+        if (viewer.getRole() != Role.STUDENT || user.getRole() == Role.MENTOR) {
+            return;
+        }
+
+        throw new ForbiddenActionException("Профилот не е достапен.");
     }
 
     /** Бајтите на сликата по случајниот клуч — ова го служи отворената рута. */

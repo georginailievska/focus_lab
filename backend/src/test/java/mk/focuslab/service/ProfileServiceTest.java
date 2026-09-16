@@ -2,6 +2,7 @@ package mk.focuslab.service;
 
 import mk.focuslab.dto.ProfileResponse;
 import mk.focuslab.dto.UpdateProfileRequest;
+import mk.focuslab.exception.ForbiddenActionException;
 import mk.focuslab.exception.ResourceNotFoundException;
 import mk.focuslab.mapper.DtoMapper;
 import mk.focuslab.model.ProfileImage;
@@ -117,6 +118,27 @@ class ProfileServiceTest {
         assertThat(profile.interests()).isNull();
         // сликата е јавна по дизајн — токму затоа патеката е случаен клуч
         assertThat(profile.avatarUrl()).isEqualTo("/api/avatars/kluc-123");
+    }
+
+    @Test
+    @DisplayName("Студент не може да отвори профил на друг студент")
+    void studentCannotOpenAnotherStudent() {
+        User viewer = student(7L);
+        User other = student(8L);
+        when(userRepository.findById(8L)).thenReturn(Optional.of(other));
+
+        assertThatThrownBy(() -> profileService.profileOf(8L, viewer))
+                .isInstanceOf(ForbiddenActionException.class);
+    }
+
+    @Test
+    @DisplayName("Менторот смее да отвори профил на студент")
+    void mentorCanOpenStudent() {
+        User viewer = User.builder().id(3L).fullName("Ментор").email("m@finki.ukim.mk")
+                .passwordHash("hash").role(Role.MENTOR).interests(new HashSet<>()).build();
+        when(userRepository.findById(8L)).thenReturn(Optional.of(student(8L)));
+
+        assertThat(profileService.profileOf(8L, viewer).fullName()).isNotBlank();
     }
 
     @Test

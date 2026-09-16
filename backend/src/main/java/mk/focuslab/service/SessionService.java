@@ -139,7 +139,8 @@ public class SessionService {
         events.publishEvent(new SessionCreatedEvent(session.getId()));
 
         // Нова сесија — нема ниту една пријава, па не праќаме прашалник за броевите
-        return mapper.toSessionResponse(session, 0, 0);
+        // Менторот што ја создал ја гледа сесијата во целост
+        return mapper.toSessionResponse(session, 0, 0, true);
     }
 
     @Transactional
@@ -181,7 +182,7 @@ public class SessionService {
         }
 
         Counts counts = countsBySessionId(List.of(sessionId)).getOrDefault(sessionId, Counts.NONE);
-        return mapper.toSessionResponse(session, counts.applicants(), counts.approved());
+        return mapper.toSessionResponse(session, counts.applicants(), counts.approved(), true);
     }
 
     @Transactional
@@ -306,11 +307,11 @@ public class SessionService {
 
     // ------------------------------------------------------------------ читање
 
-    public List<SessionResponse> listSessions(Long subjectId) {
-        return listSessions(subjectId, null, null);
+    public List<SessionResponse> listSessions(Long subjectId, User viewer) {
+        return listSessions(subjectId, null, null, viewer);
     }
 
-    public List<SessionResponse> listSessions(Long subjectId, LocalDate from, LocalDate to) {
+    public List<SessionResponse> listSessions(Long subjectId, LocalDate from, LocalDate to, User viewer) {
         if ((from == null) != (to == null)) {
             throw new IllegalArgumentException("Периодот бара и почетен и краен датум.");
         }
@@ -334,22 +335,23 @@ public class SessionService {
                             findSubjectOrThrow(subjectId).getId(), start, end);
         }
 
-        return toSessionResponses(sessions);
+        return toSessionResponses(sessions, viewer);
     }
 
-    public SessionResponse getSession(Long sessionId) {
+    public SessionResponse getSession(Long sessionId, User viewer) {
         Session session = sessionRepository.findWithSubjectById(sessionId)
                 .orElseThrow(() -> sessionNotFound(sessionId));
 
         Counts counts = countsBySessionId(List.of(session.getId()))
                 .getOrDefault(session.getId(), Counts.NONE);
 
-        return mapper.toSessionResponse(session, counts.applicants(), counts.approved());
+        return mapper.toSessionResponse(
+                session, counts.applicants(), counts.approved(), canSeeLocation(session, viewer));
     }
 
     /** "My Sessions" за ментор (Mentor Dashboard). */
     public List<SessionResponse> listSessionsForMentor(User mentor) {
-        return toSessionResponses(sessionRepository.findByMentorId(mentor.getId()));
+        return toSessionResponses(sessionRepository.findByMentorId(mentor.getId()), mentor);
     }
 
     /** "Pending Student Requests" за ментор — со еден прашалник за сите негови сесии. */
@@ -370,6 +372,9 @@ public class SessionService {
 
     /** Другите одобрени ментори — за избор на ко-ментор во Create Session. */
     public List<MentorResponse> listApprovedMentorsExcept(User self) {
+        // Списокот е за избор на ко-ментор; неодобрен ментор не закажува сесии
+        requireApprovedMentor(self);
+
         return userRepository
                 .findByRoleAndMentorStatusAndIdNotOrderByFullNameAsc(Role.MENTOR, MentorStatus.APPROVED, self.getId())
                 .stream()
@@ -379,17 +384,55 @@ public class SessionService {
 
     // ---------------------------------------------------------------- помошни
 
-    private List<SessionResponse> toSessionResponses(List<Session> sessions) {
+    /**
+     * Кој смее да го види линкот или салата: менторите на сесијата, прифатените
+     * студенти и админ. Без ова, секој најавен можеше да го прочита линкот за
+     * средба од листата на сесии и да влезе неповикан.
+     */
+    private boolean canSeeLocation(Session session, User viewer) {
+        if (viewer.getRole() == Role.ADMIN) {
+            return true;
+        }
+
+        if (viewer.getRole() == Role.MENTOR) {
+            return isMentorOf(session, viewer);
+        }
+
+        return applicationRepository
+                .findSessionIdsByStudentAndStatus(viewer.getId(), ApplicationStatus.ACCEPTED)
+                .contains(session.getId());
+    }
+
+    /** Истото за цела листа: id-ата на прифатените се бараат еднаш, не по сесија. */
+    private Set<Long> locationVisibleIds(List<Session> sessions, User viewer) {
+        if (viewer.getRole() == Role.ADMIN) {
+            return sessions.stream().map(Session::getId).collect(Collectors.toSet());
+        }
+
+        if (viewer.getRole() == Role.MENTOR) {
+            return sessions.stream()
+                    .filter(session -> isMentorOf(session, viewer))
+                    .map(Session::getId)
+                    .collect(Collectors.toSet());
+        }
+
+        return applicationRepository
+                .findSessionIdsByStudentAndStatus(viewer.getId(), ApplicationStatus.ACCEPTED);
+    }
+
+    private List<SessionResponse> toSessionResponses(List<Session> sessions, User viewer) {
         if (sessions.isEmpty()) {
             return List.of();
         }
 
         Map<Long, Counts> counts = countsBySessionId(sessions.stream().map(Session::getId).toList());
+        Set<Long> visible = locationVisibleIds(sessions, viewer);
 
         return sessions.stream()
                 .map(session -> {
                     Counts c = counts.getOrDefault(session.getId(), Counts.NONE);
-                    return mapper.toSessionResponse(session, c.applicants(), c.approved());
+                    return mapper.toSessionResponse(
+                            session, c.applicants(), c.approved(), visible.contains(session.getId()));
                 })
                 .toList();
     }

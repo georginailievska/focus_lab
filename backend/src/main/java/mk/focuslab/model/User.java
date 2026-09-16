@@ -55,6 +55,12 @@ public class User {
     @Column(unique = true, length = 64)
     private String avatarKey;
 
+    // Расте при секоја промена на лозинка. Токен со стара верзија веднаш
+    // престанува да важи, па промената на лозинка исфрла од сите уреди.
+    @Builder.Default
+    @Column(nullable = false)
+    private int tokenVersion = 0;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "student_interests",

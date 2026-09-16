@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.Optional;
 
 public interface SessionApplicationRepository extends JpaRepository<SessionApplication, Long> {
@@ -70,6 +71,16 @@ public interface SessionApplicationRepository extends JpaRepository<SessionAppli
             order by sa.appliedAt asc
             """)
     List<SessionApplication> findBySessionIdWithStudent(@Param("sessionId") Long sessionId);
+
+    /** Сесиите на кои студентот е прифатен — за видливост на линкот. */
+    @Query("""
+            select sa.session.id from SessionApplication sa
+            where sa.student.id = :studentId and sa.status = :status
+            """)
+    Set<Long> findSessionIdsByStudentAndStatus(
+            @Param("studentId") Long studentId,
+            @Param("status") ApplicationStatus status
+    );
 
     @Modifying
     @Query("delete from SessionApplication sa where sa.session.id = :sessionId")

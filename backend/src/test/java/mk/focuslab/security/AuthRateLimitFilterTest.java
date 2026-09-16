@@ -24,11 +24,11 @@ class AuthRateLimitFilterTest {
     }
 
     @Test
-    @DisplayName("По десет обиди од иста адреса најавата се одбива со 429")
-    void blocksAfterTenAttempts() throws Exception {
+    @DisplayName("По дваесет обиди од иста адреса најавата се одбива со 429")
+    void blocksAfterTwentyAttempts() throws Exception {
         AuthRateLimitFilter filter = new AuthRateLimitFilter(false);
 
-        for (int attempt = 1; attempt <= 10; attempt++) {
+        for (int attempt = 1; attempt <= 20; attempt++) {
             MockHttpServletResponse response = new MockHttpServletResponse();
             filter.doFilter(login("10.0.0.1"), response, new MockFilterChain());
 
@@ -48,7 +48,7 @@ class AuthRateLimitFilterTest {
     void limitIsPerClient() throws Exception {
         AuthRateLimitFilter filter = new AuthRateLimitFilter(false);
 
-        for (int attempt = 1; attempt <= 10; attempt++) {
+        for (int attempt = 1; attempt <= 20; attempt++) {
             filter.doFilter(login("10.0.0.1"), new MockHttpServletResponse(), new MockFilterChain());
         }
 
@@ -64,7 +64,7 @@ class AuthRateLimitFilterTest {
         AuthRateLimitFilter filter = new AuthRateLimitFilter(false);
 
         // Напаѓачот менува X-Forwarded-For на секое барање за да го измами броењето
-        for (int attempt = 1; attempt <= 10; attempt++) {
+        for (int attempt = 1; attempt <= 20; attempt++) {
             MockHttpServletRequest request = login("10.0.0.1");
             request.addHeader("X-Forwarded-For", "1.2.3." + attempt);
             filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
@@ -83,7 +83,7 @@ class AuthRateLimitFilterTest {
     void registerHasItsOwnBudget() throws Exception {
         AuthRateLimitFilter filter = new AuthRateLimitFilter(false);
 
-        for (int attempt = 1; attempt <= 5; attempt++) {
+        for (int attempt = 1; attempt <= 20; attempt++) {
             MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/register");
             request.setServletPath("/api/auth/register");
             request.setRemoteAddr("10.0.0.1");

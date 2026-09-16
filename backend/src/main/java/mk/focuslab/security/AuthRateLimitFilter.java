@@ -34,10 +34,10 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     /** Патека → (колку барања, во колкав прозорец). */
     private static final Map<String, Limit> LIMITS = Map.of(
-            "/api/auth/login", new Limit(10, Duration.ofMinutes(5)),
-            "/api/auth/register", new Limit(5, Duration.ofHours(1)),
-            "/api/auth/forgot-password", new Limit(5, Duration.ofHours(1)),
-            "/api/auth/reset-password", new Limit(10, Duration.ofHours(1))
+            "/api/auth/login", new Limit(20, Duration.ofMinutes(5)),
+            "/api/auth/register", new Limit(20, Duration.ofHours(1)),
+            "/api/auth/forgot-password", new Limit(10, Duration.ofHours(1)),
+            "/api/auth/reset-password", new Limit(20, Duration.ofHours(1))
     );
 
     /** Колку различни клиенти се паметат пред да се исчисти мапата. */

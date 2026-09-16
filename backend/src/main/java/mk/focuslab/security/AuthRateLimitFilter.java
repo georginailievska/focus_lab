@@ -32,12 +32,30 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class AuthRateLimitFilter extends OncePerRequestFilter {
 
-    /** Патека → (колку барања, во колкав прозорец). */
+    /**
+     * Патека → (колку барања, во колкав прозорец).
+     *
+     * <p>Бројките се намерно широки. Броењето е по IP адреса, а цел факултет
+     * излегува на интернет преку неколку адреси — со тесен лимит, една вежба
+     * во која дваесет студенти се најавуваат истовремено би се блокирала сама.
+     * Лимитот тука сопира машинско пробување, не нормална употреба.
+     */
     private static final Map<String, Limit> LIMITS = Map.of(
             "/api/auth/login", new Limit(20, Duration.ofMinutes(5)),
             "/api/auth/register", new Limit(20, Duration.ofHours(1)),
             "/api/auth/forgot-password", new Limit(10, Duration.ofHours(1)),
             "/api/auth/reset-password", new Limit(20, Duration.ofHours(1))
+    );
+
+    /**
+     * Патеки каде се брои само НЕуспешниот обид.
+     *
+     * <p>Кај најавата се брои само погрешна лозинка. Инаку успешните најави го
+     * трошат истиот буџет, па цела просторија на иста адреса се блокира сама
+     * среде час — а тоа не сопира никого што пробива лозинки.
+     */
+    private static final Map<String, Integer> COUNT_ONLY_WHEN_STATUS = Map.of(
+            "/api/auth/login", HttpStatus.UNAUTHORIZED.value()
     );
 
     /** Колку различни клиенти се паметат пред да се исчисти мапата. */
@@ -67,35 +85,54 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         Limit limit = LIMITS.get(path);
         String key = path + "|" + clientIp(request);
 
-        if (!allow(key, limit)) {
+        if (isBlocked(key, limit)) {
             log.warn("Премногу барања кон {} од еден клиент — одбиено", path);
             reject(response);
             return;
         }
 
         filterChain.doFilter(request, response);
+
+        Integer countedStatus = COUNT_ONLY_WHEN_STATUS.get(path);
+
+        if (countedStatus == null) {
+            record(key);
+        } else if (response.getStatus() == countedStatus) {
+            record(key);
+        } else if (response.getStatus() < 400) {
+            // Успешна најава: буџетот се враќа на нула
+            hits.remove(key);
+        }
     }
 
-    private boolean allow(String key, Limit limit) {
-        if (hits.size() > MAX_TRACKED) {
-            hits.clear();
+    private boolean isBlocked(String key, Limit limit) {
+        Deque<Instant> window = hits.get(key);
+
+        if (window == null) {
+            return false;
         }
 
-        Deque<Instant> window = hits.computeIfAbsent(key, ignored -> new ArrayDeque<>());
         Instant cutoff = Instant.now().minus(limit.window());
 
-        // Синхронизирано по клучот: два истовремени обиди не смеат да го пропуштат бројот
         synchronized (window) {
             while (!window.isEmpty() && window.peekFirst().isBefore(cutoff)) {
                 window.pollFirst();
             }
 
-            if (window.size() >= limit.maxRequests()) {
-                return false;
-            }
+            return window.size() >= limit.maxRequests();
+        }
+    }
 
+    private void record(String key) {
+        if (hits.size() > MAX_TRACKED) {
+            hits.clear();
+        }
+
+        Deque<Instant> window = hits.computeIfAbsent(key, ignored -> new ArrayDeque<>());
+
+        // Синхронизирано по клучот: два истовремени обиди не смеат да го изгубат бројот
+        synchronized (window) {
             window.addLast(Instant.now());
-            return true;
         }
     }
 
@@ -105,7 +142,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write(
                 "{\"status\":429,\"error\":\"Too Many Requests\","
-                        + "\"message\":\"Премногу обиди. Пробај повторно подоцна.\"}");
+                        + "\"message\":\"Премногу неуспешни обиди. Пробај повторно за неколку минути.\"}");
     }
 
     /**

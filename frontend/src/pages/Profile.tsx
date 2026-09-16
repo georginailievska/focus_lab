@@ -10,6 +10,7 @@ import {
   Field,
   Input,
   PageHeader,
+  PasswordInput,
   Section,
   Skeleton,
   StatCard,
@@ -343,8 +344,7 @@ function PasswordForm() {
       <Card padding="lg">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Field label="Тековна лозинка">
-            <Input
-              type="password"
+            <PasswordInput
               autoComplete="current-password"
               required
               value={currentPassword}
@@ -354,8 +354,7 @@ function PasswordForm() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Нова лозинка" hint="Најмалку 8 карактери.">
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 required
                 minLength={8}
@@ -365,8 +364,7 @@ function PasswordForm() {
             </Field>
 
             <Field label="Повтори нова лозинка">
-              <Input
-                type="password"
+              <PasswordInput
                 autoComplete="new-password"
                 required
                 minLength={8}

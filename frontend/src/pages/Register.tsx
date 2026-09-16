@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthCard } from '../components/AuthCard'
-import { Alert, Button, Field, Input } from '../components/ui'
+import { Alert, Button, Field, Input, PasswordInput } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/cn'
 import { getErrorMessage } from '../lib/errors'
@@ -74,8 +74,7 @@ export default function Register() {
         </Field>
 
         <Field label="Лозинка" hint="Најмалку 8 карактери.">
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="new-password"
             required
             minLength={8}

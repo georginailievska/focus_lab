@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthCard } from '../components/AuthCard'
-import { Alert, Button, Field, Input } from '../components/ui'
+import { Alert, Button, Field, Input, PasswordInput } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { getErrorMessage } from '../lib/errors'
 import { homeRouteFor } from '../lib/routes'
@@ -54,8 +54,7 @@ export default function Login() {
         </Field>
 
         <Field label="Лозинка">
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="current-password"
             required
             value={password}

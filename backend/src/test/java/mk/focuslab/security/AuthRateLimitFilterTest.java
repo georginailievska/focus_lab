@@ -9,38 +9,99 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-/** Најавата не смее да биде отворена за пробување лозинки во недоглед. */
+/** Најавата не смее да биде отворена за пробување лозинки — ни да се блокира сама. */
 class AuthRateLimitFilterTest {
 
-    private MockHttpServletRequest login(String ip) {
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
-        request.setServletPath("/api/auth/login");
+    private MockHttpServletRequest request(String path, String ip) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
+        request.setServletPath(path);
         request.setRemoteAddr(ip);
         return request;
     }
 
+    private MockHttpServletRequest login(String ip) {
+        return request("/api/auth/login", ip);
+    }
+
+    /** Ланец што се однесува како сервер: враќа зададен статус. */
+    private FilterChain chainReturning(int status) {
+        FilterChain chain = mock(FilterChain.class);
+
+        try {
+            doAnswer(call -> {
+                MockHttpServletResponse response = call.getArgument(1);
+                response.setStatus(status);
+                return null;
+            }).when(chain).doFilter(any(), any());
+        } catch (Exception impossible) {
+            throw new IllegalStateException(impossible);
+        }
+
+        return chain;
+    }
+
+    /** Погрешна лозинка: серверот враќа 401. */
+    private int failedLogin(AuthRateLimitFilter filter, String ip) throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(login(ip), response, chainReturning(401));
+        return response.getStatus();
+    }
+
+    /** Точна лозинка: серверот враќа 200. */
+    private int successfulLogin(AuthRateLimitFilter filter, String ip) throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(login(ip), response, chainReturning(200));
+        return response.getStatus();
+    }
+
     @Test
-    @DisplayName("По дваесет обиди од иста адреса најавата се одбива со 429")
-    void blocksAfterTwentyAttempts() throws Exception {
+    @DisplayName("Дваесет погрешни лозинки минуваат, дваесет и првата се одбива")
+    void blocksAfterTwentyFailures() throws Exception {
         AuthRateLimitFilter filter = new AuthRateLimitFilter(false);
 
         for (int attempt = 1; attempt <= 20; attempt++) {
-            MockHttpServletResponse response = new MockHttpServletResponse();
-            filter.doFilter(login("10.0.0.1"), response, new MockFilterChain());
-
-            assertThat(response.getStatus()).as("обид " + attempt).isEqualTo(200);
+            assertThat(failedLogin(filter, "10.0.0.1")).as("обид " + attempt).isEqualTo(401);
         }
 
         MockHttpServletResponse blocked = new MockHttpServletResponse();
-        FilterChain chain = mock(FilterChain.class);
+        FilterChain chain = chainReturning(401);
         filter.doFilter(login("10.0.0.1"), blocked, chain);
 
         assertThat(blocked.getStatus()).isEqualTo(429);
         verify(chain, never()).doFilter(any(), any());
+    }
+
+    @Test
+    @DisplayName("Успешните најави не го трошат буџетот")
+    void successfulLoginsDoNotCount() throws Exception {
+        AuthRateLimitFilter filter = new AuthRateLimitFilter(false);
+
+        // Цела просторија се најавува од иста адреса — ниедна не смее да се блокира
+        for (int attempt = 1; attempt <= 50; attempt++) {
+            assertThat(successfulLogin(filter, "10.0.0.1")).as("најава " + attempt).isEqualTo(200);
+        }
+    }
+
+    @Test
+    @DisplayName("Успешна најава го брише броењето од претходните грешки")
+    void successResetsTheCounter() throws Exception {
+        AuthRateLimitFilter filter = new AuthRateLimitFilter(false);
+
+        for (int attempt = 1; attempt <= 19; attempt++) {
+            failedLogin(filter, "10.0.0.1");
+        }
+
+        assertThat(successfulLogin(filter, "10.0.0.1")).isEqualTo(200);
+
+        // По точната лозинка повторно има цели дваесет обиди
+        for (int attempt = 1; attempt <= 20; attempt++) {
+            assertThat(failedLogin(filter, "10.0.0.1")).as("обид " + attempt).isEqualTo(401);
+        }
     }
 
     @Test
@@ -49,13 +110,10 @@ class AuthRateLimitFilterTest {
         AuthRateLimitFilter filter = new AuthRateLimitFilter(false);
 
         for (int attempt = 1; attempt <= 20; attempt++) {
-            filter.doFilter(login("10.0.0.1"), new MockHttpServletResponse(), new MockFilterChain());
+            failedLogin(filter, "10.0.0.1");
         }
 
-        MockHttpServletResponse other = new MockHttpServletResponse();
-        filter.doFilter(login("10.0.0.2"), other, new MockFilterChain());
-
-        assertThat(other.getStatus()).isEqualTo(200);
+        assertThat(failedLogin(filter, "10.0.0.2")).isEqualTo(401);
     }
 
     @Test
@@ -65,44 +123,37 @@ class AuthRateLimitFilterTest {
 
         // Напаѓачот менува X-Forwarded-For на секое барање за да го измами броењето
         for (int attempt = 1; attempt <= 20; attempt++) {
-            MockHttpServletRequest request = login("10.0.0.1");
-            request.addHeader("X-Forwarded-For", "1.2.3." + attempt);
-            filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+            MockHttpServletRequest attacker = login("10.0.0.1");
+            attacker.addHeader("X-Forwarded-For", "1.2.3." + attempt);
+            filter.doFilter(attacker, new MockHttpServletResponse(), chainReturning(401));
         }
 
-        MockHttpServletRequest request = login("10.0.0.1");
-        request.addHeader("X-Forwarded-For", "1.2.3.99");
+        MockHttpServletRequest last = login("10.0.0.1");
+        last.addHeader("X-Forwarded-For", "1.2.3.99");
         MockHttpServletResponse blocked = new MockHttpServletResponse();
-        filter.doFilter(request, blocked, new MockFilterChain());
+        filter.doFilter(last, blocked, chainReturning(401));
 
         assertThat(blocked.getStatus()).isEqualTo(429);
     }
 
     @Test
-    @DisplayName("Регистрацијата има свој, построг лимит")
-    void registerHasItsOwnBudget() throws Exception {
+    @DisplayName("Регистрацијата се брои и кога успее — инаку е бесплатна")
+    void registerCountsEverySuccess() throws Exception {
         AuthRateLimitFilter filter = new AuthRateLimitFilter(false);
 
         for (int attempt = 1; attempt <= 20; attempt++) {
-            MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/register");
-            request.setServletPath("/api/auth/register");
-            request.setRemoteAddr("10.0.0.1");
-            filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            filter.doFilter(request("/api/auth/register", "10.0.0.1"), response, chainReturning(200));
+            assertThat(response.getStatus()).as("регистрација " + attempt).isEqualTo(200);
         }
 
-        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/register");
-        request.setServletPath("/api/auth/register");
-        request.setRemoteAddr("10.0.0.1");
         MockHttpServletResponse blocked = new MockHttpServletResponse();
-        filter.doFilter(request, blocked, new MockFilterChain());
+        filter.doFilter(request("/api/auth/register", "10.0.0.1"), blocked, chainReturning(200));
 
         assertThat(blocked.getStatus()).isEqualTo(429);
 
         // ...а најавата од истата адреса сè уште поминува
-        MockHttpServletResponse stillFine = new MockHttpServletResponse();
-        filter.doFilter(login("10.0.0.1"), stillFine, new MockFilterChain());
-
-        assertThat(stillFine.getStatus()).isEqualTo(200);
+        assertThat(failedLogin(filter, "10.0.0.1")).isEqualTo(401);
     }
 
     @Test
@@ -111,11 +162,9 @@ class AuthRateLimitFilterTest {
         AuthRateLimitFilter filter = new AuthRateLimitFilter(false);
 
         for (int attempt = 1; attempt <= 50; attempt++) {
-            MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/sessions");
-            request.setServletPath("/api/sessions");
-            request.setRemoteAddr("10.0.0.1");
+            MockHttpServletRequest any = request("/api/sessions", "10.0.0.1");
             MockHttpServletResponse response = new MockHttpServletResponse();
-            filter.doFilter(request, response, new MockFilterChain());
+            filter.doFilter(any, response, new MockFilterChain());
 
             assertThat(response.getStatus()).isEqualTo(200);
         }

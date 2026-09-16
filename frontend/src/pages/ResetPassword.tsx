@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { AuthCard } from '../components/AuthCard'
-import { Alert, Button, Field, Input } from '../components/ui'
+import { Alert, Button, Field, PasswordInput } from '../components/ui'
 import { resetPassword } from '../api/auth'
 import { getErrorMessage } from '../lib/errors'
 
@@ -86,8 +86,7 @@ export default function ResetPassword() {
     >
       <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
         <Field label="Нова лозинка" hint="Најмалку 8 карактери.">
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="new-password"
             required
             minLength={8}
@@ -97,8 +96,7 @@ export default function ResetPassword() {
         </Field>
 
         <Field label="Повтори нова лозинка">
-          <Input
-            type="password"
+          <PasswordInput
             autoComplete="new-password"
             required
             minLength={8}

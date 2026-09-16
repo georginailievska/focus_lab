@@ -46,14 +46,20 @@
 
 ```bash
 # 1. база
-createdb focuslab && createuser focuslab
+docker compose up -d db          # или createdb focuslab && createuser focuslab
 
 # 2. backend (терминал 1)
-cd backend && mvn spring-boot:run                   # http://localhost:8080
+./run-backend.sh                 # http://localhost:8080
 
 # 3. frontend (терминал 2)
 cd frontend && npm install && npm run dev           # http://localhost:5173
 ```
+
+`run-backend.sh` ги вчитува вредностите од `.env` и потоа вика
+`mvn spring-boot:run`. Тоа е потребно затоа што **`mvn` сам не го чита `.env`** —
+тој фајл го користи само docker compose. Без вчитување Spring ги зема
+placeholder-ите од `application.yml`, а `SecretsGuard` ги одбива (види
+„Безбедност").
 
 Vite го proxy-ира `/api` кон `localhost:8080`.
 

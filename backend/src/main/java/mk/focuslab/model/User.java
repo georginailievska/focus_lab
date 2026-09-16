@@ -57,8 +57,10 @@ public class User {
 
     // Расте при секоја промена на лозинка. Токен со стара верзија веднаш
     // престанува да важи, па промената на лозинка исфрла од сите уреди.
+    // columnDefinition со default: колоната се додава на табела што веќе има
+    // корисници, а Postgres одбива NOT NULL без default на полна табела.
     @Builder.Default
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "integer not null default 0")
     private int tokenVersion = 0;
 
     @ManyToMany(fetch = FetchType.LAZY)

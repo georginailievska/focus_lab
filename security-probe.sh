@@ -99,7 +99,7 @@ fi
 green "пробен студент и ментор создадени"
 
 head2 "2. Пристап без токен"
-for path in /sessions /subjects /interests /me /users/1 /admin/stats /mentor/sessions; do
+for path in /sessions /subjects /interests /me /users/1 /notifications /admin/stats /mentor/sessions; do
   expect 401 "$(code GET "$path")" "GET $path без токен"
 done
 

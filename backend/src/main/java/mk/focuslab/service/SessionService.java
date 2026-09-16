@@ -208,6 +208,7 @@ public class SessionService {
     private List<Recipient> activeRecipients(Long sessionId) {
         return applicationRepository.findActiveBySessionId(sessionId, ApplicationStatus.REJECTED).stream()
                 .map(application -> new Recipient(
+                        application.getStudent().getId(),
                         application.getStudent().getEmail(),
                         application.getStudent().getFullName()))
                 .toList();
@@ -289,7 +290,8 @@ public class SessionService {
         );
 
         events.publishEvent(new ApplicationReceivedEvent(
-                student.getEmail(), student.getFullName(), session.getTitle()));
+                student.getId(), student.getEmail(), student.getFullName(),
+                session.getId(), session.getTitle()));
 
         return mapper.toApplicationResponse(application);
     }

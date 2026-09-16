@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Avatar } from './Avatar'
 import { BrandMark } from './BrandMark'
+import { NotificationBell } from './NotificationBell'
 import { ThemeToggle } from './ThemeToggle'
 import { useAuth } from '../context/AuthContext'
 import { cn } from '../lib/cn'
@@ -75,6 +76,7 @@ export default function Navbar() {
           </nav>
 
           <div className="flex min-w-0 items-center gap-1.5">
+            <NotificationBell />
             <ThemeToggle />
 
             <NavLink

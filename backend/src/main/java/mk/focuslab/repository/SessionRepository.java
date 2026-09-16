@@ -3,6 +3,7 @@ package mk.focuslab.repository;
 import jakarta.persistence.LockModeType;
 import mk.focuslab.model.Session;
 import mk.focuslab.model.Subject;
+import mk.focuslab.model.User;
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -28,6 +29,10 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     @EntityGraph(attributePaths = "subject")
     @Query("select s from Session s join s.mentors m where m.id = :mentorId order by s.startTime asc")
     List<Session> findByMentorId(@Param("mentorId") Long mentorId);
+
+    /** Менторите на една сесија — за известувањето при нова пријава. */
+    @Query("select m from Session s join s.mentors m where s.id = :sessionId")
+    List<User> findMentorsBySessionId(@Param("sessionId") Long sessionId);
 
     @Query("select s.id from Session s join s.mentors m where m.id = :mentorId")
     List<Long> findIdsByMentorId(@Param("mentorId") Long mentorId);

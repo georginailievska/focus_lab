@@ -7,6 +7,7 @@ import mk.focuslab.dto.CommentResponse;
 import mk.focuslab.dto.AuthResponse;
 import mk.focuslab.dto.MentorNoteResponse;
 import mk.focuslab.dto.MentorResponse;
+import mk.focuslab.dto.NotificationResponse;
 import mk.focuslab.dto.OverlapResponse;
 import mk.focuslab.dto.PostResponse;
 import mk.focuslab.dto.ProfileResponse;
@@ -16,6 +17,7 @@ import mk.focuslab.dto.SessionResponse;
 import mk.focuslab.dto.StudentCommentResponse;
 import mk.focuslab.dto.SubjectResponse;
 import mk.focuslab.dto.UserResponse;
+import mk.focuslab.model.Notification;
 import mk.focuslab.model.Post;
 import mk.focuslab.model.PostAttachment;
 import mk.focuslab.model.PostComment;
@@ -177,6 +179,18 @@ public class DtoMapper {
                 comment.getText(),
                 comment.isSharedWithMentors(),
                 comment.getCreatedAt()
+        );
+    }
+
+    public NotificationResponse toNotificationResponse(Notification notification) {
+        return new NotificationResponse(
+                notification.getId(),
+                notification.getType(),
+                notification.getTitle(),
+                notification.getBody(),
+                notification.getSessionId(),
+                notification.getReadAt() != null,
+                notification.getCreatedAt()
         );
     }
 

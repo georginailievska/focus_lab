@@ -1,0 +1,11 @@
+package mk.focuslab.model;
+
+public enum NotificationType {
+    NEW_SESSION,
+    APPLICATION_RECEIVED,
+    NEW_APPLICATION,
+    APPLICATION_ACCEPTED,
+    APPLICATION_REJECTED,
+    SESSION_UPDATED,
+    SESSION_CANCELLED
+}

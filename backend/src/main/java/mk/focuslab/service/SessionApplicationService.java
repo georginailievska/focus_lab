@@ -59,6 +59,7 @@ public class SessionApplicationService {
 
         // Настанот носи само готови вредности и се испраќа по комит — види EmailService
         events.publishEvent(new ApplicationDecidedEvent(
+                application.getStudent().getId(),
                 application.getStudent().getEmail(),
                 application.getStudent().getFullName(),
                 session.getId(),

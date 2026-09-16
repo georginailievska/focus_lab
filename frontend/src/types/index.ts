@@ -220,6 +220,28 @@ export interface SessionNote {
   createdAt: string
 }
 
+// ---- Известувања (mk.focuslab.dto.NotificationResponse) --------------------
+
+export type NotificationType =
+  | 'NEW_SESSION'
+  | 'APPLICATION_RECEIVED'
+  | 'NEW_APPLICATION'
+  | 'APPLICATION_ACCEPTED'
+  | 'APPLICATION_REJECTED'
+  | 'SESSION_UPDATED'
+  | 'SESSION_CANCELLED'
+
+export interface Notification {
+  id: number
+  type: NotificationType
+  title: string
+  body: string | null
+  /** null кога сесијата повеќе не постои. */
+  sessionId: number | null
+  read: boolean
+  createdAt: string
+}
+
 export interface Post {
   id: number
   author: Author

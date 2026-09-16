@@ -129,7 +129,7 @@ export function NotificationBell() {
         className={cn(
           'relative grid h-9 w-9 place-items-center rounded-full transition',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60',
-          open ? 'bg-brand/12 text-brand' : 'text-ink-mute hover:bg-surface-2 hover:text-ink',
+          open ? 'bg-brand/12 text-brand' : 'text-ink-soft hover:bg-surface-2 hover:text-ink',
         )}
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">

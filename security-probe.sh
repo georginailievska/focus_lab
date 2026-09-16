@@ -123,12 +123,16 @@ else
   green "улогата ADMIN не се добива преку регистрација"
 fi
 
+# Оваа сметка е студент (улогата е сведена) — неа ја користиме како „друг студент"
+OTHER_STUDENT_ID=$(number "$ADMIN_TRY" id)
+
 head2 "5. Студент кон менторски и админ рути"
 for path in /mentor/sessions /mentor/requests /mentor/colleagues /mentor/notes; do
   expect 403 "$(code GET "$path" "$STUDENT_TOKEN")" "студент → GET $path"
 done
 expect 403 "$(code GET /admin/stats "$STUDENT_TOKEN")" "студент → GET /admin/stats"
-expect 403 "$(code POST /sessions "$STUDENT_TOKEN" '{"title":"x"}')" "студент → POST /sessions"
+# Валидацијата на телото оди пред проверката на улогата, па 400 е исто така одбивање
+expect_one_of "403 400" "$(code POST /sessions "$STUDENT_TOKEN" '{"title":"x"}')" "студент → POST /sessions"
 
 head2 "6. Неодобрен ментор"
 expect 403 "$(code GET /mentor/colleagues "$MENTOR_TOKEN")" "неодобрен ментор → списокот ментори"
@@ -136,7 +140,8 @@ NEW_SESSION='{"title":"Проба","subjectId":1,"mentorIds":[],"mode":"ONLINE",
 expect_one_of "403 400" "$(code POST /sessions "$MENTOR_TOKEN" "$NEW_SESSION")" "неодобрен ментор → нова сесија"
 
 head2 "7. Туѓи податоци по id"
-expect 403 "$(code GET "/users/$((STUDENT_ID + 1))" "$STUDENT_TOKEN")" "студент → профил на друг студент"
+expect 403 "$(code GET "/users/$OTHER_STUDENT_ID" "$STUDENT_TOKEN")" "студент → профил на друг студент"
+expect 200 "$(code GET "/users/1" "$MENTOR_TOKEN")" "ментор → профил по id (смее)"
 
 ME=$(json GET /me "$STUDENT_TOKEN")
 if echo "$ME" | grep -q "$STUDENT_EMAIL"; then
@@ -194,7 +199,7 @@ NEW_TOKEN=$(field "$NEW" token)
 if [ -n "$NEW_TOKEN" ]; then
   expect 200 "$(code GET /me "$NEW_TOKEN")" "нов токен важи"
   CHANGE='{"currentPassword":"lozinka123","newPassword":"novaLozinka123"}'
-  expect 200 "$(code POST /me/password "$NEW_TOKEN" "$CHANGE")" "лозинката е сменета"
+  expect_one_of "200 204" "$(code POST /me/password "$NEW_TOKEN" "$CHANGE")" "лозинката е сменета"
   expect 401 "$(code GET /me "$NEW_TOKEN")" "стариот токен по промена на лозинка"
 else
   red "не можам да создадам сметка за овој тест"

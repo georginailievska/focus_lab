@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -24,6 +25,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -63,10 +66,19 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // Без токен или со истечен токен: 401, не 403. Frontend-от на 401
-                // го брише токенот и води на најава; 403 остава корисникот заглавен.
-                .exceptionHandling(handling -> handling.authenticationEntryPoint(
-                        (request, response, exception) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
+                // Без токен: 401 (frontend-от на 401 брише токен и води на најава).
+                // Автентициран но без право: 403.
+                //
+                // Статусот се пишува со setStatus, НЕ со sendError: sendError тера
+                // Tomcat да препрати кон /error, таа рута не е дозволена, контекстот
+                // при препраќањето е веќе исчистен — и 401 ја препишува 403-ката.
+                .exceptionHandling(handling -> handling
+                        .authenticationEntryPoint((request, response, exception) ->
+                                writeStatus(response, HttpServletResponse.SC_UNAUTHORIZED,
+                                        "Најави се за да продолжиш."))
+                        .accessDeniedHandler((request, response, exception) ->
+                                writeStatus(response, HttpServletResponse.SC_FORBIDDEN,
+                                        "Немаш пристап до овој ресурс.")))
                 // API-то враќа само JSON: ништо од него не смее да се вгради во
                 // страница, ниту да се прикаже во iframe. Spring веќе праќа
                 // nosniff и X-Frame-Options; CSP и Referrer-Policy се додаваат тука.
@@ -91,6 +103,20 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /** Одговор со статус и JSON тело, без препраќање кон /error. */
+    private static void writeStatus(HttpServletResponse response, int status, String message)
+            throws IOException {
+        if (response.isCommitted()) {
+            return;
+        }
+
+        response.setStatus(status);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.getWriter().write(
+                "{\"status\":" + status + ",\"message\":\"" + message + "\"}");
     }
 
     private CorsConfigurationSource corsConfigurationSource() {

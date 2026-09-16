@@ -168,7 +168,7 @@ export function NotificationBell() {
                 onClick={handleMarkAll}
                 className="rounded-lg px-1.5 py-0.5 text-xs font-medium text-brand transition hover:bg-brand/10"
               >
-                Означи ги сите
+                Означи ги прочитани
               </button>
             )}
           </div>

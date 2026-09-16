@@ -19,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.security.web.header.writers.StaticHeadersWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -73,7 +74,9 @@ public class SecurityConfig {
                         .contentSecurityPolicy(csp -> csp.policyDirectives(API_CSP))
                         .referrerPolicy(referrer -> referrer.policy(
                                 ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
-                        .permissionsPolicyHeader(permissions -> permissions.policy(PERMISSIONS_POLICY)))
+                        // StaticHeadersWriter наместо permissionsPolicyHeader: тој метод
+                        // не постои во секоја верзија на Spring Security
+                        .addHeaderWriter(new StaticHeadersWriter("Permissions-Policy", PERMISSIONS_POLICY)))
                 .authorizeHttpRequests(auth -> auth
                         // Docker HEALTHCHECK-от мора да поминува без токен
                         .requestMatchers("/api/health").permitAll()

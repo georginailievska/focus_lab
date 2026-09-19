@@ -1,0 +1,41 @@
+# Сè што НЕ е тајна. Овие вредности смеат да стојат во репото.
+#
+# Клучевите се исти како променливите на околината што ги чита апликацијата
+# (види backend/src/main/resources/application.yml), па подот ги добива со
+# envFrom, без пресликување име по име.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: focuslab-config
+  namespace: focus-lab
+  labels:
+    app.kubernetes.io/part-of: focus-lab
+data:
+  # Базата се бара по име на Service-от во истиот namespace
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "focuslab"
+  DB_USER: "focuslab"
+
+  # Мора да е адресата на Ingress-от: од неа се градат линковите во email
+  # известувањата и од неа зависи CORS.
+  FRONTEND_ORIGIN: "http://focuslab.local"
+
+  JWT_EXPIRATION_MS: "86400000"
+
+  ADMIN_EMAIL: "admin@focuslab.mk"
+  ALLOWED_EMAIL_DOMAINS: "students.finki.ukim.mk,finki.ukim.mk"
+  PASSWORD_RESET_TTL_MINUTES: "30"
+
+  # Без вистински SMTP сервер праќањето само се логира како предупредување —
+  # апликацијата работи и без него.
+  MAIL_HOST: "smtp.office365.com"
+  MAIL_PORT: "587"
+  MAIL_USERNAME: "focuslab@example.com"
+  MAIL_FROM: "focuslab@example.com"
+  MAIL_AUTH: "true"
+  MAIL_STARTTLS: "true"
+
+  # Апликацијата стои зад Ingress контролер, па X-Forwarded-For е вистинската
+  # адреса на клиентот и ограничувањето на најави брои по клиент.
+  TRUST_FORWARDED_FOR: "true"

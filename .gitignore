@@ -30,3 +30,6 @@ frontend/tsconfig.tsbuildinfo
 # Локални .env варијанти
 .env.local
 .env.*.local
+
+# Вистинските тајни за Kubernetes; во репото е само 02-secret.example.yaml
+k8s/02-secret.yaml

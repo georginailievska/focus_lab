@@ -1,0 +1,9 @@
+# Сè што припаѓа на FOCUS Lab живее во свој namespace: така имињата на
+# сервисите (postgres, backend, frontend) не се мешаат со ништо друго во
+# кластерот, а целата апликација се брише со една команда.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: focus-lab
+  labels:
+    app.kubernetes.io/part-of: focus-lab

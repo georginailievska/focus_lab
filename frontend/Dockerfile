@@ -1,7 +1,9 @@
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package.json ./
-RUN npm install
+# package-lock.json е дел од копирањето: npm ci гради од точните верзии
+# од lock фајлот, па имиџот е ист денес и за шест месеци
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
 RUN npm run build
 

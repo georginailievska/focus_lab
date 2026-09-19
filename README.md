@@ -71,6 +71,25 @@ cp .env.example .env      # пополни JWT_SECRET и ADMIN_PASSWORD
 docker compose up --build
 ```
 
+### Во Kubernetes
+
+Трите сервиси имаат манифести во `k8s/` — StatefulSet за базата, Deployment и
+Service за бекендот и фронтендот, Ingress како едно влезно место, сè во свој
+namespace. Упатство чекор по чекор: [`k8s/README.md`](k8s/README.md).
+
+```bash
+./k8s/apply.sh
+```
+
+### CI
+
+`.github/workflows/ci.yml` на секој push кон `main` ги пушта тестовите на
+бекендот и проверката на типовите на фронтендот, па само ако поминат ги гради
+двата имиџа и ги праќа на Docker Hub, со ознаки `latest` и кратката sha на
+комитот. Pull request-от се тестира, но не објавува имиџ.
+
+Потребни секрети во репото: `DOCKERHUB_USERNAME` и `DOCKERHUB_TOKEN`.
+
 ### Admin сметка
 
 Се создава автоматски при прво стартување, од `ADMIN_EMAIL` / `ADMIN_PASSWORD`.

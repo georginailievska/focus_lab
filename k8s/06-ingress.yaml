@@ -1,0 +1,41 @@
+# Едно влезно место за целата апликација.
+#
+# /api/ оди директно на бекендот, сè друго на фронтендот. Патеката се бира по
+# најдолг совпаднат префикс, па /api не се меша со /.
+#
+# Домаќинот focuslab.local не постои во DNS — се додава рачно во /etc/hosts:
+#   127.0.0.1  focuslab.local
+#
+# Бара инсталиран ingress-nginx контролер во кластерот (види k8s/README.md).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: focuslab
+  namespace: focus-lab
+  labels:
+    app.kubernetes.io/part-of: focus-lab
+  annotations:
+    # Прилозите во постовите се до 22 MB вкупно, а ingress-nginx по
+    # стандард одбива барање над 1 MB со 413
+    nginx.ingress.kubernetes.io/proxy-body-size: "22m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: focuslab.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 8080
+
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

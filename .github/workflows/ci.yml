@@ -4,9 +4,13 @@
 # градат и праќаат двата Docker имиџа на Docker Hub. Обратниот ред не би имал
 # смисла — нема потреба да се објавува имиџ што не поминал тест.
 #
-# Потребни секрети во репото (Settings → Secrets and variables → Actions):
-#   DOCKERHUB_USERNAME — корисничкото име на Docker Hub
-#   DOCKERHUB_TOKEN    — access token од Docker Hub (не лозинката)
+# Потребно во репото, Settings → Secrets and variables → Actions:
+#
+#   Variables:  DOCKERHUB_USERNAME — корисничкото име на Docker Hub
+#   Secrets:    DOCKERHUB_TOKEN    — access token од Docker Hub (не лозинката)
+#
+# Името е променлива, не секрет: секретите се маскираат во логот, па името на
+# имиџот би се гледало како *** и секоја грешка би била нечитлива.
 
 name: CI
 
@@ -66,10 +70,29 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     strategy:
+      # Без ова, паѓањето на едниот го прекинува другиот и се гледа само
+      # половина од проблемот
+      fail-fast: false
       matrix:
         service: [backend, frontend]
 
     steps:
+      # Инаку најавата паѓа со „Username and password required", што не кажува
+      # кое од двете го нема
+      - name: Проверка на подготовката
+        run: |
+          missing=""
+          [ -z "${{ vars.DOCKERHUB_USERNAME }}" ] && missing="$missing\n  - променлива DOCKERHUB_USERNAME (Settings → Secrets and variables → Actions → Variables)"
+          [ -z "${{ secrets.DOCKERHUB_TOKEN }}" ] && missing="$missing\n  - секрет DOCKERHUB_TOKEN (истата страница, таб Secrets)"
+
+          if [ -n "$missing" ]; then
+            echo "Не можам да праќам имиџи — недостасува:"
+            printf "$missing\n"
+            exit 1
+          fi
+
+          echo "Ќе праќам на docker.io/${{ vars.DOCKERHUB_USERNAME }}/focus-lab-*"
+
       - uses: actions/checkout@v4
 
       - name: Buildx
@@ -79,7 +102,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # Секој имиџ добива две ознаки: latest (последна состојба на main) и
@@ -88,7 +111,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ secrets.DOCKERHUB_USERNAME }}/focus-lab-${{ matrix.service }}
+          images: ${{ env.REGISTRY }}/${{ vars.DOCKERHUB_USERNAME }}/focus-lab-${{ matrix.service }}
           tags: |
             type=raw,value=latest
             type=sha,format=short

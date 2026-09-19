@@ -88,7 +88,9 @@ namespace. Упатство чекор по чекор: [`k8s/README.md`](k8s/RE
 двата имиџа и ги праќа на Docker Hub, со ознаки `latest` и кратката sha на
 комитот. Pull request-от се тестира, но не објавува имиџ.
 
-Потребни секрети во репото: `DOCKERHUB_USERNAME` и `DOCKERHUB_TOKEN`.
+Потребно во репото (Settings → Secrets and variables → Actions):
+променлива `DOCKERHUB_USERNAME` во табот **Variables**, и секрет
+`DOCKERHUB_TOKEN` во табот **Secrets**.
 
 ### Admin сметка
 

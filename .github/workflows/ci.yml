@@ -66,8 +66,9 @@ jobs:
     name: Имиџ (${{ matrix.service }})
     runs-on: ubuntu-latest
     needs: test
-    # Имиџи се праќаат само од main. Pull request-от се тестира, но не објавува.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Имиџи се праќаат само од main, и од push и од рачно пуштање.
+    # Pull request-от се тестира, но не објавува.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
 
     strategy:
       # Без ова, паѓањето на едниот го прекинува другиот и се гледа само

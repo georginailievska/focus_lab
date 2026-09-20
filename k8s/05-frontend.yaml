@@ -38,8 +38,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          # СМЕНИ DOCKERHUB_USERNAME со своето име на Docker Hub
-          image: docker.io/DOCKERHUB_USERNAME/focus-lab-frontend:latest
+          # СМЕНИ georgina1 со своето име на Docker Hub
+          image: docker.io/georgina1/focus-lab-frontend:latest
           imagePullPolicy: IfNotPresent
 
           ports:

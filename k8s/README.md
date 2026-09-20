@@ -63,17 +63,17 @@ echo "127.0.0.1  focuslab.local" | sudo tee -a /etc/hosts
 под емулација би биле премногу бавни. Docker Desktop го дели складот на
 имиџи со Kubernetes, па `imagePullPolicy: IfNotPresent` ги наоѓа веднаш.
 
-Од коренот на проектот (замени го `tvoe-ime`):
+Од коренот на проектот (замени го `georgina1`):
 
 ```bash
-docker build -t tvoe-ime/focus-lab-backend:latest ./backend
-docker build -t tvoe-ime/focus-lab-frontend:latest ./frontend
+docker build -t georgina1/focus-lab-backend:latest ./backend
+docker build -t georgina1/focus-lab-frontend:latest ./frontend
 ```
 
 ## 5. Име во манифестите
 
 ```bash
-sed -i '' 's/DOCKERHUB_USERNAME/tvoe-ime/g' k8s/04-backend.yaml k8s/05-frontend.yaml
+sed -i '' 's/DOCKERHUB_USERNAME/georgina1/g' k8s/04-backend.yaml k8s/05-frontend.yaml
 ```
 
 ## 6. Тајните
